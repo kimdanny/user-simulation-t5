@@ -1,5 +1,3 @@
-# import sys
-# sys.path.insert(0, '/home/ec2-user/user-simulation/dataset_loader')
 from dataset_loader import DatasetLoader
 from tqdm import tqdm
 import os
@@ -66,7 +64,10 @@ if __name__ == "__main__":
         'LOOK_N_TURNS': -1,
         'ENSURE_ALTERNATING_ROLES': True
     }
-    
+    CCPE: 2854/5188
+    MWOZ: 10540/10553
+    ReDial: 3302/6976
+    SGD: 12807/12832
 
 
     dataset_config = {

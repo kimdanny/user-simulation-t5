@@ -32,7 +32,7 @@ class DatasetLoader:
         self.ensure_alternating_roles: bool = config['ENSURE_ALTERNATING_ROLES']
 
         self.dataset_dir_path = os.path.join(
-            Path(os.getcwd()).parent, 'dataset')
+            Path(os.path.dirname(os.path.realpath(__file__))).parent, 'dataset')
 
     @staticmethod
     def get_main_score(scores: list) -> int:
