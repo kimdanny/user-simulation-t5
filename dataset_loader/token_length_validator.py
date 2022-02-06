@@ -18,37 +18,96 @@ def validate_token_length(dataset: str, config: dict, max_length: int = 512) -> 
 
     # histories check
     with open(f'validation_logs/histories_{dataset}.txt', 'w') as f:
-        for i, text in enumerate(tqdm(histories)):
+        cnt = 0
+        for i, text in enumerate(histories):
             tokens = tokenizer.batch_encode_plus([text], truncation=False,
                                                  return_tensors='pt')
 
             if tokens['input_ids'].shape[1] > max_length:
-                f.write(f"Index {i}\n")
+                cnt += 1
+                f.write(
+                    f"Index {i} -> length: {tokens['input_ids'].shape[1]}\n")
                 f.write(text)
                 f.write('\n\n')
-
+        f.write(f"# cases: {cnt}/{len(histories)}")
         f.close()
 
     # utterances check
     with open(f'validation_logs/utterances_{dataset}.txt', 'w') as f:
-        for i, text in enumerate(tqdm(utterances)):
+        cnt = 0
+        for i, text in enumerate(utterances):
             tokens = tokenizer.batch_encode_plus([text], truncation=False,
                                                  return_tensors='pt')
 
             if tokens['input_ids'].shape[1] > max_length:
-                f.write(f"Index {i}\n")
+                cnt += 1
+                f.write(
+                    f"Index {i} -> length: {tokens['input_ids'].shape[1]}\n")
                 f.write(text)
                 f.write('\n\n')
-
+        f.write(f"# cases: {cnt}/{len(utterances)}")
         f.close()
 
 
 if __name__ == "__main__":
 
     dataset_config = {
-        'LOOK_N_TURNS': 5,
+        'LOOK_N_TURNS': -1,
         'ENSURE_ALTERNATING_ROLES': True
     }
 
-    for dataset in ['CCPE', 'MWOZ', 'ReDial', 'SGD']:
+    for dataset in tqdm(['CCPE', 'MWOZ', 'ReDial', 'SGD']):
         validate_token_length(dataset, dataset_config)
+
+    """
+    Experiment: different LOOK_N_TURNS and number of cases where token length exceeds 512
+
+    dataset_config = {
+        'LOOK_N_TURNS': -1,
+        'ENSURE_ALTERNATING_ROLES': True
+    }
+    
+
+
+    dataset_config = {
+        'LOOK_N_TURNS': 5,
+        'ENSURE_ALTERNATING_ROLES': True
+    }
+    CCPE: 1/5188
+
+
+    dataset_config = {
+        'LOOK_N_TURNS': 6,
+        'ENSURE_ALTERNATING_ROLES': True
+    }
+    CCPE: 6/5188
+    
+
+    dataset_config = {
+        'LOOK_N_TURNS': 7,
+        'ENSURE_ALTERNATING_ROLES': True
+    }
+    CCPE: 7/5188
+    
+
+    dataset_config = {
+        'LOOK_N_TURNS': 8,
+        'ENSURE_ALTERNATING_ROLES': True
+    }
+    CCPE: 19/5188
+
+
+    dataset_config = {
+        'LOOK_N_TURNS': 9,
+        'ENSURE_ALTERNATING_ROLES': True
+    }
+    CCPE: 23/5188
+
+
+    dataset_config = {
+        'LOOK_N_TURNS': 10,
+        'ENSURE_ALTERNATING_ROLES': True
+    }
+    CCPE: 
+
+    """
