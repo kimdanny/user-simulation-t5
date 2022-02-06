@@ -1,0 +1,8 @@
+__pycache__/
+.DS_Store
+.vscode/
+.idea/
+
+
+validation_logs/
+

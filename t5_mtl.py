@@ -5,7 +5,6 @@ import torch
 import torch.nn.functional as F
 from torch.utils.data import Dataset, DataLoader, RandomSampler, SequentialSampler
 from torch import cuda
-import os
 from tqdm import tqdm
 
 # Importing the T5 modules from huggingface/transformers
