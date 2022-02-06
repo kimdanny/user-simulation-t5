@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 import numpy as np
 import pandas as pd
 import torch
@@ -60,13 +61,20 @@ class MTLDataSet(Dataset):
 class T5Trainer:
     def __init__(self, model_params: dict,
                  source_column: str = 'input_text', target_column: str = 'target_text',
-                 output_dir: str = './outputs') -> None:
+                 output_dir=None) -> None:
         self.model_params = model_params
         self.source_column = source_column
         self.target_column = target_column
-        self.output_dir = output_dir
+        if output_dir is not None:
+            self.output_dir = output_dir
+        else:
+            self.output_dir = os.path.join(
+                Path(os.path.dirname(os.path.realpath(__file__))), 'outputs')
+        if not os.path.exists(self.output_dir):
+            os.makedirs(self.output_dir)
 
         self.device = 'cuda' if cuda.is_available() else 'cpu'
+        print(f"device is set to {self.device}")
         self.tokenizer = T5Tokenizer.from_pretrained(model_params["MODEL"])
         self.model = T5ForConditionalGeneration.from_pretrained(
             model_params["MODEL"]).to(self.device)
@@ -215,13 +223,20 @@ class T5Trainer:
 
 
 if __name__ == "__main__":
-    df = pd.read_csv('data/eval.tsv', sep="\t", index_col=False).astype(str)
+    sample_dataset_dir_path = os.path.join(
+        Path(os.path.dirname(os.path.realpath(__file__))).parent, 'sample_dataset')
+    sample_data_path = os.path.join(sample_dataset_dir_path, 'eval.tsv')
+    df = pd.read_csv(sample_data_path, sep="\t",
+                     index_col=False).astype(str)
     df = df[['prefix', 'input_text', 'target_text']]
     df['colon'] = ': '
 
-    df['input'] = df['prefix'] + df['colon'] + df['input_text']
-    df = df[['input', 'target_text']]
+    df['input_text'] = df['prefix'] + df['colon'] + df['input_text']
+    df = df[['input_text', 'target_text']]
     df = df.sample(frac=1).reset_index(drop=True)
+    df = df[:10_000]
+    print(df.head(10))
+    print(len(df))
 
     model_params = {
         "MODEL": "t5-base",             # model_type: t5-base/t5-large
@@ -236,4 +251,4 @@ if __name__ == "__main__":
     }
 
     t5_trainer = T5Trainer(model_params=model_params)
-    t5_trainer.run(dataframe=df)
+    # t5_trainer.run(dataframe=df)
