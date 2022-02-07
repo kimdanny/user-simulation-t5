@@ -207,6 +207,11 @@ class DatasetLoader:
         else:
             return self._load_v1(dataset=dataset)
 
+    def to_mtl_df(self, dataset: str):
+        histories, satisfactions, actions, actions_set, utterances = self.load(
+            dataset)
+        
+
 
 if __name__ == "__main__":
     dataset_config = {

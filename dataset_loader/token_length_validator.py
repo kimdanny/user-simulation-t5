@@ -50,7 +50,7 @@ def validate_token_length(dataset: str, config: dict, max_length: int = 512) -> 
 if __name__ == "__main__":
 
     dataset_config = {
-        'LOOK_N_TURNS': -1,
+        'LOOK_N_TURNS': 17,
         'ENSURE_ALTERNATING_ROLES': True
     }
 
@@ -109,6 +109,30 @@ if __name__ == "__main__":
         'LOOK_N_TURNS': 10,
         'ENSURE_ALTERNATING_ROLES': True
     }
-    CCPE: 
+    CCPE: 56/5188
+
+
+    dataset_config = {
+        'LOOK_N_TURNS': 15,
+        'ENSURE_ALTERNATING_ROLES': True
+    }
+    CCPE: 241/5188
+
+
+    dataset_config = {
+        'LOOK_N_TURNS': 17,
+        'ENSURE_ALTERNATING_ROLES': True
+    }
+    CCPE: 356/5188
+
+
+    dataset_config = {
+        'LOOK_N_TURNS': 20,
+        'ENSURE_ALTERNATING_ROLES': True
+    }
+    CCPE: 618/5188
+    MWOZ: 16/10553
+    ReDial: 19/6976
+    SGD: 4/12832
 
     """

@@ -251,4 +251,4 @@ if __name__ == "__main__":
     }
 
     t5_trainer = T5Trainer(model_params=model_params)
-    # t5_trainer.run(dataframe=df)
+    t5_trainer.run(dataframe=df)
