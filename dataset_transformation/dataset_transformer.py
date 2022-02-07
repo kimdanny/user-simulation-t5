@@ -248,6 +248,8 @@ if __name__ == "__main__":
     }
     dataset_transformer = DatasetTransformer(config=dataset_config)
 
-    df = dataset_transformer.to_mtl_df('CCPE')
-    df.to_csv('./test.csv', index=False)
-    print(df.sample(50))
+    dataset_dir_path = dataset_transformer.dataset_dir_path
+    for dataset in ['CCPE', 'MWOZ', 'ReDial', 'SGD']:
+        df = dataset_transformer.to_mtl_df(dataset)
+        df.to_csv(os.path.join(dataset_dir_path,
+                  f'./{dataset}_df.csv'), index=False)
