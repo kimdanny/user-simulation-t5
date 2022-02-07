@@ -1,4 +1,4 @@
-from dataset_loader import DatasetLoader
+from dataset_transformer import DatasetTransformer
 from tqdm import tqdm
 import os
 from transformers import T5Tokenizer
@@ -11,7 +11,7 @@ def validate_token_length(dataset: str, config: dict, max_length: int = 512) -> 
     if not os.path.exists('validation_logs'):
         os.makedirs('validation_logs')
 
-    loader = DatasetLoader(config=config)
+    loader = DatasetTransformer(config=config)
     histories, _, _, _, utterances = loader.load(dataset)
 
     # histories check
@@ -50,7 +50,7 @@ def validate_token_length(dataset: str, config: dict, max_length: int = 512) -> 
 if __name__ == "__main__":
 
     dataset_config = {
-        'LOOK_N_TURNS': 17,
+        'LOOK_N_TURNS': 6,
         'ENSURE_ALTERNATING_ROLES': True
     }
 

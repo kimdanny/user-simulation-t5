@@ -21,7 +21,7 @@ import pandas as pd
 from copy import deepcopy
 
 
-class DatasetLoader:
+class DatasetTransformer:
     def __init__(self, config: dict) -> None:
         """
         Config can have following fields:
@@ -65,7 +65,7 @@ class DatasetLoader:
                 if text != 'OVERALL':
                     # append to the previous row
                     new_df.at[last_index, 'Text'] += f" {text}"
-                    new_df.at[last_index, 'Action'] += f",{action}"
+                    new_df.at[last_index, 'Action'] += f" , {action}"
                     new_df.at[last_index, 'Score'] = scores
 
             else:
@@ -207,9 +207,15 @@ class DatasetLoader:
         else:
             return self._load_v1(dataset=dataset)
 
+    def upsample():
+        """
+        Upsampling rating 1 and 5
+        """
+
     def to_mtl_df(self, dataset: str):
         histories, satisfactions, actions, actions_set, utterances = self.load(
             dataset)
+        assert len(histories) == len(satisfactions) == len(actions) == len(utterances)
         
 
 
@@ -218,7 +224,7 @@ if __name__ == "__main__":
         'LOOK_N_TURNS': 5,
         'ENSURE_ALTERNATING_ROLES': True
     }
-    loader = DatasetLoader(config=dataset_config)
+    loader = DatasetTransformer(config=dataset_config)
 
     histories, satisfactions, actions, actions_set, utterances = loader.load(
         'SGD')
