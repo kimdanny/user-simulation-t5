@@ -50,7 +50,7 @@ def validate_token_length(dataset: str, config: dict, max_length: int = 512) -> 
 if __name__ == "__main__":
 
     dataset_config = {
-        'LOOK_N_TURNS': 6,
+        'LOOK_N_TURNS': 10,
         'ENSURE_ALTERNATING_ROLES': True
     }
 

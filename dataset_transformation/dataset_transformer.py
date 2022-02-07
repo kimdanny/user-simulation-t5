@@ -63,8 +63,9 @@ class DatasetTransformer:
             role, text, action, scores = row.Role, row.Text, row.Action, row.Score
             if last_role == role and role == 'USER':
                 if text != 'OVERALL':
-                    # append to the previous row
+                    # append current text to the previous text
                     new_df.at[last_index, 'Text'] += f" {text}"
+                    # TODO: consider the set. can overlap
                     new_df.at[last_index, 'Action'] += f" , {action}"
                     new_df.at[last_index, 'Score'] = scores
 
@@ -78,7 +79,7 @@ class DatasetTransformer:
 
         return new_df
 
-    def _load_v1(self, dataset: str) -> tuple:
+    def _transform_v1(self, dataset: str) -> tuple:
         dataset_path = os.path.join(self.dataset_dir_path, f'{dataset}.txt')
         raw = [line[:-1]
                for line in open(dataset_path, encoding='utf-8')]
@@ -139,7 +140,7 @@ class DatasetTransformer:
 
         return return_data
 
-    def _load_v2(self, dataset: str) -> tuple:
+    def _transform_v2(self, dataset: str) -> tuple:
         dataset_path = os.path.join(self.dataset_dir_path, f'{dataset}.txt')
         dataset_df = pd.read_csv(dataset_path, sep='\t', header=None)
         dataset_df.columns = ['Role', 'Text', 'Action', 'Score']
@@ -203,35 +204,50 @@ class DatasetTransformer:
         Returns a tuple of (histories, satisfactions, actions, actions_set, utterances)
         """
         if self.ensure_alternating_roles:
-            return self._load_v2(dataset=dataset)
+            return self._transform_v2(dataset=dataset)
         else:
-            return self._load_v1(dataset=dataset)
+            return self._transform_v1(dataset=dataset)
 
     def upsample():
         """
-        Upsampling rating 1 and 5
+        Upsampling non-3-ratings
         """
+        pass
 
-    def to_mtl_df(self, dataset: str):
-        histories, satisfactions, actions, actions_set, utterances = self.load(
-            dataset)
-        assert len(histories) == len(satisfactions) == len(actions) == len(utterances)
-        
+    def to_mtl_df(self, dataset: str) -> pd.DataFrame:
+        histories, satisfactions, actions, _, utterances = self.load(dataset)
+        assert len(histories) == len(satisfactions) == \
+            len(actions) == len(utterances)
+
+        _prefix = ['sat: ' for _ in range(len(histories))] + \
+            ['act: ' for _ in range(len(histories))] + \
+            ['utt: ' for _ in range(len(histories))]
+        _input = histories * 3
+        _target = satisfactions + actions + utterances
+
+        assert len(_prefix) == len(_input) == len(_target)
+
+        df_data = {
+            'prefix': _prefix,
+            'input_text': _input,
+            'target_text': _target
+        }
+
+        # concat prefix with input_text
+        df = pd.DataFrame(df_data)
+        df['input_text'] = df['prefix'] + df['input_text']
+        df = df[['input_text', 'target_text']]
+
+        return df
 
 
 if __name__ == "__main__":
     dataset_config = {
-        'LOOK_N_TURNS': 5,
+        'LOOK_N_TURNS': 10,
         'ENSURE_ALTERNATING_ROLES': True
     }
-    loader = DatasetTransformer(config=dataset_config)
+    dataset_transformer = DatasetTransformer(config=dataset_config)
 
-    histories, satisfactions, actions, actions_set, utterances = loader.load(
-        'SGD')
-
-    print(len(histories), len(satisfactions),
-          len(actions), len(actions_set), len(utterances))
-
-    print(histories[:3])
-    print()
-    print(utterances[:3])
+    df = dataset_transformer.to_mtl_df('CCPE')
+    df.to_csv('./test.csv', index=False)
+    print(df.sample(50))

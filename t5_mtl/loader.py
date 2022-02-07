@@ -9,13 +9,13 @@ class MTLDataSet(Dataset):
 
     """
 
-    def __init__(self, dataframe, tokenizer, source_len, target_len, source_text, target_text):
+    def __init__(self, dataframe, tokenizer, source_len, target_len, source_col, target_col):
         self.tokenizer = tokenizer
         self.data = dataframe
         self.source_len = source_len
         self.target_len = target_len
-        self.target_text = self.data[target_text]
-        self.source_text = self.data[source_text]
+        self.source_text = self.data[source_col]
+        self.target_text = self.data[target_col]
 
     def __len__(self):
         return len(self.target_text)

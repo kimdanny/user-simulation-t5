@@ -6,4 +6,4 @@ __pycache__/
 
 validation_logs/
 outputs/
-
+*.csv

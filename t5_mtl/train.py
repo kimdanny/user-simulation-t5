@@ -68,7 +68,7 @@ class T5Trainer:
 
         self._console.print(f"FULL Dataset: {dataframe.shape}")
         self._console.print(f"TRAIN Dataset: {train_dataset.shape}")
-        self._console.print(f"TEST Dataset: {val_dataset.shape}\n")
+        self._console.print(f"VALIDATION Dataset: {val_dataset.shape}\n")
 
         # Creating the Training and Validation dataset for further creation of Dataloader
         training_set = MTLDataSet(train_dataset, self.tokenizer,
@@ -82,16 +82,16 @@ class T5Trainer:
         train_params = {
             'batch_size': self.model_params["TRAIN_BATCH_SIZE"],
             'shuffle': True,
-            # 'num_workers': 0
+            'num_workers': 2
         }
 
         val_params = {
             'batch_size': self.model_params["VALID_BATCH_SIZE"],
             'shuffle': False,
-            # 'num_workers': 0
+            'num_workers': 2
         }
 
-        # Creation of Dataloaders for testing and validation. This will be used down for training and validation stage for the model.
+        # Creation of Dataloaders for training and validation. 
         training_loader = DataLoader(training_set, **train_params)
         val_loader = DataLoader(val_set, **val_params)
 
@@ -104,7 +104,7 @@ class T5Trainer:
         self.model.save_pretrained(save_path)
         self.tokenizer.save_pretrained(save_path)
 
-        # evaluating the test dataset
+        # evaluating the validation dataset
         self._console.log(f"[Initiating Validation]...\n")
         predictions, actuals = self.validate(val_loader)
         final_df = pd.DataFrame({
