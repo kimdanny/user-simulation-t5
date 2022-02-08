@@ -7,15 +7,30 @@ from transformers import T5Tokenizer
 tokenizer = T5Tokenizer.from_pretrained('t5-base')
 
 
-def validate_token_length(dataset: str, config: dict, max_length: int = 512) -> None:
-    if not os.path.exists('validation_logs'):
-        os.makedirs('validation_logs')
+def check_token_length(text, max_length=512):
+    """
+    Returns two elements:
+        (True/False, int) means (valid or not, overflowing amount if invalid)
+    """
+    tokens = tokenizer.batch_encode_plus([text], truncation=False,
+                                         return_tensors='pt')
+    token_length = tokens['input_ids'].shape[1]
+    if token_length < max_length + 1:
+        return True, 0
+    else:
+        overflow_amount = int(token_length - max_length)
+        return False, overflow_amount
+
+
+def experiment_token_length(dataset: str, config: dict, max_length: int = 512) -> None:
+    if not os.path.exists('experiment_logs'):
+        os.makedirs('experiment_logs')
 
     loader = DatasetTransformer(config=config)
-    histories, _, _, _, utterances = loader.load(dataset)
+    histories, _, _, _, utterances = loader.transform(dataset)
 
     # histories check
-    with open(f'validation_logs/histories_{dataset}.txt', 'w') as f:
+    with open(f'experiment_logs/histories_{dataset}.txt', 'w') as f:
         cnt = 0
         for i, text in enumerate(histories):
             tokens = tokenizer.batch_encode_plus([text], truncation=False,
@@ -31,7 +46,7 @@ def validate_token_length(dataset: str, config: dict, max_length: int = 512) -> 
         f.close()
 
     # utterances check
-    with open(f'validation_logs/utterances_{dataset}.txt', 'w') as f:
+    with open(f'experiment_logs/utterances_{dataset}.txt', 'w') as f:
         cnt = 0
         for i, text in enumerate(utterances):
             tokens = tokenizer.batch_encode_plus([text], truncation=False,
@@ -55,7 +70,7 @@ if __name__ == "__main__":
     }
 
     for dataset in tqdm(['CCPE', 'MWOZ', 'ReDial', 'SGD']):
-        validate_token_length(dataset, dataset_config)
+        experiment_token_length(dataset, dataset_config)
 
     """
     Experiment: different LOOK_N_TURNS and number of cases where token length exceeds 512

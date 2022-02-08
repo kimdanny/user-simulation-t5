@@ -5,20 +5,24 @@ Difference from original:
     1. Avoid empty string prediction.
         For example, in SGD, USER starts the conversation, so the first history is empty string.
         We omitted these cases.
+
     2. Do not predict OVERALL.
         Generating a user utterance "OVERALL" does not make sense, 
         so we omiited the last turn (OVERALL) of each session.
-    
-    3. (Optional) Can specify the N turns of conversation histories to look at.
-        set N to -1 to look at the whole previous turns
-    4. (Optional) Can ensure that two roles alternate with each other.
+        
+    3. (Optional) Can ensure that two roles alternate with each other.
         i.e. Transforms cases like SYSTEM-USER-USER-USER-SYSTEM to SYSTEM-USER-SYSTEM
 """
+from token_length_validator import check_token_length
 import os
 from pathlib import Path
 import numpy as np
 import pandas as pd
+from random import randint, sample
 from copy import deepcopy
+from functools import lru_cache
+import nltk
+from textaugment import EDA, Translate, Wordnet
 
 
 class DatasetTransformer:
@@ -27,9 +31,17 @@ class DatasetTransformer:
         Config can have following fields:
             1. LOOK_N_TURNS:                int (-1 to look the whole previous turns)
             2. ENSURE_ALTERNATING_ROLES:    bool
+            3. AUGMENT_WHEN_UPSAMPLE:       bool
         """
         self.look_n_turns: int = config['LOOK_N_TURNS']
         self.ensure_alternating_roles: bool = config['ENSURE_ALTERNATING_ROLES']
+        self.augment_when_upsample: bool = config['AUGMENT_WHEN_UPSAMPLE']
+        if self.augment_when_upsample:
+            nltk.download('stopwords')
+            nltk.download('wordnet')
+            nltk.download('punkt')
+            self.eda = EDA()
+            self.translate = Translate(src="en", to="es")
 
         self.dataset_dir_path = os.path.join(
             Path(os.path.dirname(os.path.realpath(__file__))).parent, 'dataset')
@@ -199,7 +211,7 @@ class DatasetTransformer:
 
         return return_data
 
-    def load(self, dataset: str):
+    def transform(self, dataset: str):
         """
         Returns a tuple of (histories, satisfactions, actions, actions_set, utterances)
         """
@@ -208,14 +220,26 @@ class DatasetTransformer:
         else:
             return self._transform_v1(dataset=dataset)
 
-    def upsample():
+    @lru_cache(maxsize=None)
+    def adjust_token_length(self, text, max_length=512):
         """
-        Upsampling non-3-ratings
+        Recursion function that truncates the former part of the text to ensure the maximum token length.
+        Returns a truncated text that is less than max token length.
         """
-        pass
+        final_text = deepcopy(text)
+        is_valid, overflow_amount = check_token_length(text, max_length)
+        if is_valid:
+            return final_text
+        else:
+            # heuristic to cut the first 10 chars multiplied by overflowing token amount
+            truncated_text = text[overflow_amount * 10:]
+            truncated_text = truncated_text.strip().split(' ')[1:]
+            final_text = deepcopy(truncated_text)
+            self.adjust_token_length(truncated_text, max_length)
 
     def to_mtl_df(self, dataset: str) -> pd.DataFrame:
-        histories, satisfactions, actions, _, utterances = self.load(dataset)
+        histories, satisfactions, actions, _, utterances = self.transform(
+            dataset)
         assert len(histories) == len(satisfactions) == \
             len(actions) == len(utterances)
 
@@ -233,12 +257,23 @@ class DatasetTransformer:
             'target_text': _target
         }
 
-        # concat prefix with input_text
-        df = pd.DataFrame(df_data)
-        df['input_text'] = df['prefix'] + df['input_text']
-        df = df[['input_text', 'target_text']]
+        return pd.DataFrame(df_data)
 
-        return df
+    def upsample_non_3(self):
+        """
+        Upsampling non-3 rating data while augmenting the texts
+        """
+        pass
+
+    @staticmethod
+    def augment_text(text) -> str:
+        """
+        Available methods:
+
+        """
+        rand_num = randint(1, 4)
+
+        return ''
 
 
 if __name__ == "__main__":
