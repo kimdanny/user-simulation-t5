@@ -269,7 +269,7 @@ class DatasetTransformer:
 
     def augment_text(self, text) -> str:
         """
-        Available methods:
+        Available methods (randomly chosen):
             1. random_deltion
             2. random_swap
             3. random_insertion
@@ -277,7 +277,6 @@ class DatasetTransformer:
             5. back translation
         """
         rand_num = randint(1, 5)
-        rand_num = 5
         if rand_num == 1:
             augmented_text = self.eda.random_deletion(text, p=0.2)
         elif rand_num == 2:
