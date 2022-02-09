@@ -12,8 +12,13 @@ Difference from original:
         
     3. (Optional) Can ensure that two roles alternate with each other.
         i.e. Transforms cases like SYSTEM-USER-USER-USER-SYSTEM to SYSTEM-USER-SYSTEM
+    
+    4. Augment texts when upsampling non-3 ratings
+
+    5. Different Upsampling factors by ratings
 """
 from urllib.error import HTTPError
+from tqdm import tqdm
 from token_length_validator import check_token_length
 import os
 from pathlib import Path
@@ -49,7 +54,7 @@ class DatasetTransformer:
             Path(os.path.dirname(os.path.realpath(__file__))).parent, 'dataset')
 
     @staticmethod
-    def get_main_score(scores: list) -> int:
+    def _get_main_score(scores: list) -> int:
         """
         Returns most frequent score.
         In Weiwei's paper, they just return score, without adding 1 again,
@@ -63,7 +68,7 @@ class DatasetTransformer:
         return score + 1
 
     @staticmethod
-    def alternate_roles(df: pd.DataFrame) -> pd.DataFrame:
+    def _alternate_roles(df: pd.DataFrame) -> pd.DataFrame:
         """
         Returns a pandas DataFrame that has no same roles in a row.
         """
@@ -137,7 +142,7 @@ class DatasetTransformer:
                         utterances.append(text)
 
                         # satisfaction labels
-                        satisfactions.append(self.get_main_score(
+                        satisfactions.append(self._get_main_score(
                             [int(item) - 1 for item in scores]))
 
                         # action labels
@@ -161,7 +166,7 @@ class DatasetTransformer:
         dataset_df = dataset_df.fillna('')
 
         if self.ensure_alternating_roles:
-            dataset_df = self.alternate_roles(dataset_df)
+            dataset_df = self._alternate_roles(dataset_df)
 
         histories = []
         satisfactions = []
@@ -180,7 +185,7 @@ class DatasetTransformer:
                     action = action.strip()
                     action = "None" if action == '' else action
                     scores = scores.split(',')
-                    score = self.get_main_score(
+                    score = self._get_main_score(
                         [int(item) - 1 for item in scores])
 
                     # histories input
@@ -223,7 +228,7 @@ class DatasetTransformer:
             return self._transform_v1(dataset=dataset)
 
     @lru_cache(maxsize=None)
-    def adjust_token_length(self, text, max_length=512):
+    def _adjust_token_length(self, text, max_length=510):
         """
         Recursion function that truncates the former part of the text to ensure the maximum token length.
         Returns a truncated text that is less than max token length.
@@ -239,7 +244,11 @@ class DatasetTransformer:
             final_text = deepcopy(truncated_text)
             self.adjust_token_length(truncated_text, max_length)
 
-    def to_mtl_df(self, dataset: str) -> pd.DataFrame:
+    def to_mtl_df(self, dataset: str, upsample=True) -> pd.DataFrame:
+        """
+        Returns a dataframe of columns 
+            'prefix', 'input_text', and 'target_text' 
+        """
         histories, satisfactions, actions, _, utterances = self.transform(
             dataset)
         assert len(histories) == len(satisfactions) == \
@@ -251,6 +260,64 @@ class DatasetTransformer:
         _input = histories * 3
         _target = satisfactions + actions + utterances
 
+        # Upsampling non-3 ratings
+
+        # if self.ensure_alternating_roles:
+        #     upsample_factors = {
+        #         'rating1': 5,
+        #         'rating2': 9,
+        #         'rating3': 5,
+        #         'rating4': 7,
+        #         'rating5': 4
+        #     }
+        # else:
+        #     upsample_factors = {
+        #         'rating1': 5,
+        #         'rating2': 9,
+        #         'rating3': 5,
+        #         'rating4': 7,
+        #         'rating5': 4
+        #     }
+
+        # one, two, three, four, five = 0, 0, 0, 0, 0
+        # for sat in satisfactions:
+        #     if sat == 1:
+        #         one += 1
+        #     elif sat == 2:
+        #         two += 1
+        #     elif sat == 3:
+        #         three += 1
+        #     elif sat == 4:
+        #         four += 1
+        #     elif sat == 5:
+        #         five += 1
+        
+        # print(one, two, three, four, five)
+        # import sys
+        # sys.exit(1)
+
+        if self.augment_when_upsample:
+            augmenting_func = self._augment_text
+        else:
+            augmenting_func = lambda x: x
+
+        upsample_indices = [i for i, sat in enumerate(satisfactions) if sat != 3]
+        upsample_indices = upsample_indices * 10
+        upsample_prefixes = ['sat: '] * len(upsample_indices)
+        upsampled_inputs = [augmenting_func(histories[i]) for i in upsample_indices]
+        upsampled_targets = [satisfactions[i] for i in upsample_indices]
+
+        _prefix += upsample_prefixes
+        _input += upsampled_inputs
+        _target += upsampled_targets
+
+        # for history, satisfaction in zip(histories, satisfactions):
+        #     if satisfaction != 3:
+        #         _prefix.extend(['sat: '] * 10)
+        #         _target.extend([satisfaction] * 10)
+        #         for _ in tqdm(range(10)):
+        #             _input.append(augmenting_func(history))
+
         assert len(_prefix) == len(_input) == len(_target)
 
         df_data = {
@@ -261,13 +328,7 @@ class DatasetTransformer:
 
         return pd.DataFrame(df_data)
 
-    def upsample_non_3(self):
-        """
-        Upsampling non-3 rating data while augmenting the texts
-        """
-        pass
-
-    def augment_text(self, text) -> str:
+    def _augment_text(self, text: str) -> str:
         """
         Available methods (randomly chosen):
             1. random_deltion
@@ -308,15 +369,15 @@ if __name__ == "__main__":
     }
     dataset_transformer = DatasetTransformer(config=dataset_config)
 
-    # dataset_dir_path = dataset_transformer.dataset_dir_path
-    # for dataset in ['CCPE', 'MWOZ', 'ReDial', 'SGD']:
-    #     df = dataset_transformer.to_mtl_df(dataset)
-    #     df.to_csv(os.path.join(dataset_dir_path,
-    #               f'./{dataset}_df.csv'), index=False)
+    dataset_dir_path = dataset_transformer.dataset_dir_path
+    for dataset in tqdm(['CCPE', 'MWOZ', 'ReDial', 'SGD']):
+        df = dataset_transformer.to_mtl_df(dataset)
+        df.to_csv(os.path.join(dataset_dir_path, f'./{dataset}_df.csv'), index=False)
+        print(f"{dataset} is over")
 
-    sample_text = '''I'm looking for a cheap restaurant in the east part of town. 
-    the missing sock is a nice restaurant in the east part of town in the cheap price range What is the address and phone number? 
-    The address of The Missing Sock is Finders Corner Newmarket Road and the phone number is 01223 812660. 
-    May I help you with anything else today?'''
-    augmented_text = dataset_transformer.augment_text(sample_text)
-    print(augmented_text)
+    # sample_text = '''I'm looking for a cheap restaurant in the east part of town.
+    # the missing sock is a nice restaurant in the east part of town in the cheap price range What is the address and phone number?
+    # The address of The Missing Sock is Finders Corner Newmarket Road and the phone number is 01223 812660.
+    # May I help you with anything else today?'''
+    # augmented_text = dataset_transformer.augment_text(sample_text)
+    # print(augmented_text)
