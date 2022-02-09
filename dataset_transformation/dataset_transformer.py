@@ -295,21 +295,21 @@ class DatasetTransformer:
         # print(one, two, three, four, five)
         # import sys
         # sys.exit(1)
+        if upsample:
+            if self.augment_when_upsample:
+                augmenting_func = self._augment_text
+            else:
+                augmenting_func = lambda x: x
 
-        if self.augment_when_upsample:
-            augmenting_func = self._augment_text
-        else:
-            augmenting_func = lambda x: x
+            upsample_indices = [i for i, sat in enumerate(satisfactions) if sat != 3]
+            upsample_indices = upsample_indices * 10
+            upsample_prefixes = ['sat: '] * len(upsample_indices)
+            upsampled_inputs = [augmenting_func(histories[i]) for i in upsample_indices]
+            upsampled_targets = [satisfactions[i] for i in upsample_indices]
 
-        upsample_indices = [i for i, sat in enumerate(satisfactions) if sat != 3]
-        upsample_indices = upsample_indices * 10
-        upsample_prefixes = ['sat: '] * len(upsample_indices)
-        upsampled_inputs = [augmenting_func(histories[i]) for i in upsample_indices]
-        upsampled_targets = [satisfactions[i] for i in upsample_indices]
-
-        _prefix += upsample_prefixes
-        _input += upsampled_inputs
-        _target += upsampled_targets
+            _prefix += upsample_prefixes
+            _input += upsampled_inputs
+            _target += upsampled_targets
 
         # for history, satisfaction in zip(histories, satisfactions):
         #     if satisfaction != 3:
@@ -338,25 +338,24 @@ class DatasetTransformer:
             5. back translation
         """
         rand_num = randint(1, 5)
-        if rand_num == 1:
-            augmented_text = self.eda.random_deletion(text, p=0.2)
-        elif rand_num == 2:
-            augmented_text = self.eda.random_swap(text,
-                                                  n=1 if int(len(text.split())*0.05) == 0 else int(len(text.split())*0.05))
-        elif rand_num == 3:
-            augmented_text = self.eda.random_insertion(text,
-                                                       n=1 if int(len(text.split())*0.05) == 0 else int(len(text.split())*0.05))
-        elif rand_num == 4:
-            augmented_text = self.eda.synonym_replacement(text,
-                                                          n=1 if int(len(text.split())*0.1) == 0 else int(len(text.split())*0.1))
-        else:
-            target_lang = sample(['ko', 'it', 'fa', 'es', 'el', 'la'], k=1)[0]
-            try:
-                augmented_text = self.translate(src='en',
-                                                to=target_lang).augment(text)
-            except HTTPError:
+        try:
+            if rand_num == 1:
+                augmented_text = self.eda.random_deletion(text, p=0.2)
+            elif rand_num == 2:
+                augmented_text = self.eda.random_swap(text,
+                                                    n=1 if int(len(text.split())*0.05) == 0 else int(len(text.split())*0.05))
+            elif rand_num == 3:
+                augmented_text = self.eda.random_insertion(text,
+                                                        n=1 if int(len(text.split())*0.05) == 0 else int(len(text.split())*0.05))
+            elif rand_num == 4:
                 augmented_text = self.eda.synonym_replacement(text,
-                                                              n=1 if int(len(text.split())*0.1) == 0 else int(len(text.split())*0.1))
+                                                            n=1 if int(len(text.split())*0.1) == 0 else int(len(text.split())*0.1))
+            else:
+                target_lang = sample(['ko', 'it', 'fa', 'es', 'el', 'la'], k=1)[0]
+                augmented_text = self.translate(src='en', to=target_lang).augment(text)
+                
+        except:
+            return text
 
         return augmented_text
 
@@ -372,12 +371,12 @@ if __name__ == "__main__":
     dataset_dir_path = dataset_transformer.dataset_dir_path
     for dataset in tqdm(['CCPE', 'MWOZ', 'ReDial', 'SGD']):
         df = dataset_transformer.to_mtl_df(dataset)
-        df.to_csv(os.path.join(dataset_dir_path, f'./{dataset}_df.csv'), index=False)
+        df.to_csv(os.path.join(dataset_dir_path, f'{dataset}_df.csv'), index=False)
         print(f"{dataset} is over")
 
     # sample_text = '''I'm looking for a cheap restaurant in the east part of town.
     # the missing sock is a nice restaurant in the east part of town in the cheap price range What is the address and phone number?
     # The address of The Missing Sock is Finders Corner Newmarket Road and the phone number is 01223 812660.
     # May I help you with anything else today?'''
-    # augmented_text = dataset_transformer.augment_text(sample_text)
+    # augmented_text = dataset_transformer._augment_text(sample_text)
     # print(augmented_text)
