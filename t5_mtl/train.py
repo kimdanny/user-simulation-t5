@@ -60,10 +60,8 @@ class T5Trainer:
         # Creation of Dataset and Dataloader
         # Defining the train size. So 80% of the data will be used for training and the rest for validation.
         train_size = 0.8
-        train_dataset = dataframe.sample(
-            frac=train_size, random_state=self.model_params["SEED"])
-        val_dataset = dataframe.drop(
-            train_dataset.index).reset_index(drop=True)
+        train_dataset = dataframe.sample(frac=train_size, random_state=self.model_params["SEED"])
+        val_dataset = dataframe.drop(train_dataset.index).reset_index(drop=True)
         train_dataset = train_dataset.reset_index(drop=True)
 
         self._console.print(f"FULL Dataset: {dataframe.shape}")

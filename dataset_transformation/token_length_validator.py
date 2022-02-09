@@ -28,7 +28,7 @@ def experiment_token_length(dataset: str, config: dict, max_length: int = 512) -
         os.makedirs('experiment_logs')
 
     loader = DatasetTransformer(config=config)
-    histories, _, _, _, utterances = loader.transform(dataset)
+    histories, _, _, _, utterances = loader._transform(dataset)
 
     # histories check
     with open(f'experiment_logs/histories_{dataset}.txt', 'w') as f:

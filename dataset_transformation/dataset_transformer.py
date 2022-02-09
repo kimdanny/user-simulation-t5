@@ -18,6 +18,7 @@ Difference from original:
     5. Different Upsampling factors by ratings
 """
 from urllib.error import HTTPError
+from sklearn import datasets
 from tqdm import tqdm
 from token_length_validator import check_token_length
 import os
@@ -218,7 +219,7 @@ class DatasetTransformer:
 
         return return_data
 
-    def transform(self, dataset: str):
+    def _transform(self, dataset: str):
         """
         Returns a tuple of (histories, satisfactions, actions, actions_set, utterances)
         """
@@ -227,29 +228,12 @@ class DatasetTransformer:
         else:
             return self._transform_v1(dataset=dataset)
 
-    @lru_cache(maxsize=None)
-    def _adjust_token_length(self, text, max_length=510):
-        """
-        Recursion function that truncates the former part of the text to ensure the maximum token length.
-        Returns a truncated text that is less than max token length.
-        """
-        final_text = deepcopy(text)
-        is_valid, overflow_amount = check_token_length(text, max_length)
-        if is_valid:
-            return final_text
-        else:
-            # heuristic to cut the first 10 chars multiplied by overflowing token amount
-            truncated_text = text[overflow_amount * 10:]
-            truncated_text = truncated_text.strip().split(' ')[1:]
-            final_text = deepcopy(truncated_text)
-            self.adjust_token_length(truncated_text, max_length)
-
-    def to_mtl_df(self, dataset: str, upsample=True) -> pd.DataFrame:
+    def to_mtl_df(self, dataset: str, upsample=True, save_to_csv=True) -> pd.DataFrame:
         """
         Returns a dataframe of columns 
             'prefix', 'input_text', and 'target_text' 
         """
-        histories, satisfactions, actions, _, utterances = self.transform(
+        histories, satisfactions, actions, _, utterances = self._transform(
             dataset)
         assert len(histories) == len(satisfactions) == \
             len(actions) == len(utterances)
@@ -261,40 +245,21 @@ class DatasetTransformer:
         _target = satisfactions + actions + utterances
 
         # Upsampling non-3 ratings
+        if self.ensure_alternating_roles:
+            upsample_factors = {
+                'SGD': 5,
+                'MWOZ': 9,
+                'ReDial': 5,
+                'CCPE': 7
+            }
+        else:
+            upsample_factors = {
+                'SGD': 5,
+                'MWOZ': 8,
+                'ReDial': 5,
+                'CCPE': 3
+            }
 
-        # if self.ensure_alternating_roles:
-        #     upsample_factors = {
-        #         'rating1': 5,
-        #         'rating2': 9,
-        #         'rating3': 5,
-        #         'rating4': 7,
-        #         'rating5': 4
-        #     }
-        # else:
-        #     upsample_factors = {
-        #         'rating1': 5,
-        #         'rating2': 9,
-        #         'rating3': 5,
-        #         'rating4': 7,
-        #         'rating5': 4
-        #     }
-
-        # one, two, three, four, five = 0, 0, 0, 0, 0
-        # for sat in satisfactions:
-        #     if sat == 1:
-        #         one += 1
-        #     elif sat == 2:
-        #         two += 1
-        #     elif sat == 3:
-        #         three += 1
-        #     elif sat == 4:
-        #         four += 1
-        #     elif sat == 5:
-        #         five += 1
-        
-        # print(one, two, three, four, five)
-        # import sys
-        # sys.exit(1)
         if upsample:
             if self.augment_when_upsample:
                 augmenting_func = self._augment_text
@@ -302,7 +267,7 @@ class DatasetTransformer:
                 augmenting_func = lambda x: x
 
             upsample_indices = [i for i, sat in enumerate(satisfactions) if sat != 3]
-            upsample_indices = upsample_indices * 10
+            upsample_indices = upsample_indices * upsample_factors[dataset]
             upsample_prefixes = ['sat: '] * len(upsample_indices)
             upsampled_inputs = [augmenting_func(histories[i]) for i in upsample_indices]
             upsampled_targets = [satisfactions[i] for i in upsample_indices]
@@ -310,13 +275,6 @@ class DatasetTransformer:
             _prefix += upsample_prefixes
             _input += upsampled_inputs
             _target += upsampled_targets
-
-        # for history, satisfaction in zip(histories, satisfactions):
-        #     if satisfaction != 3:
-        #         _prefix.extend(['sat: '] * 10)
-        #         _target.extend([satisfaction] * 10)
-        #         for _ in tqdm(range(10)):
-        #             _input.append(augmenting_func(history))
 
         assert len(_prefix) == len(_input) == len(_target)
 
@@ -326,7 +284,11 @@ class DatasetTransformer:
             'target_text': _target
         }
 
-        return pd.DataFrame(df_data)
+        df = pd.DataFrame(df_data)
+        if save_to_csv:
+            df.to_csv(os.path.join(self.dataset_dir_path, f'{dataset}_df.csv'), index=False)
+
+        return df
 
     def _augment_text(self, text: str) -> str:
         """
@@ -359,6 +321,54 @@ class DatasetTransformer:
 
         return augmented_text
 
+    def _token_length_adjuster(self, text, max_length=510) -> str:
+        """
+        Truncates the former part of the text to ensure the maximum token length.
+        Returns a truncated text that is less than max token length.
+        """
+        is_valid, overflow_amount = check_token_length(text, max_length)
+        if is_valid:
+            return text
+        else:
+            final_text = ''
+            while (is_valid==False):
+                # heuristic to cut the first 5 chars multiplied by overflowing token amount
+                truncated_text = text[overflow_amount * 5:]
+                truncated_text = ' '.join(truncated_text.strip().split(' ')[1:])
+                final_text = deepcopy(truncated_text)
+                is_valid, overflow_amount = check_token_length(truncated_text, max_length)
+
+            return final_text
+
+    def finalise_df(self, dataset=None, dataframe=None, save_to_csv=True) -> pd.DataFrame:
+        """
+        :param dataset   -> string format dataset name
+        :param dataframe -> dataframe with column 'prefix', 'input_text', and 'target_text'
+        """
+        df = None
+        if isinstance(dataframe, pd.DataFrame):
+            df = dataframe
+        else:
+            # assume that we already have df saved in the dataset
+            assert dataset is not None and isinstance(dataset, str)
+            df = pd.read_csv(os.path.join(self.dataset_dir_path, f'{dataset}_df.csv'))
+        
+        adjusted_df = deepcopy(df)
+        
+        # adjust token length
+        for i, row in df.iterrows():
+            adjusted_text = self._token_length_adjuster(row['input_text'])
+            adjusted_df.at[i, 'input_text'] = adjusted_text
+        
+        # collate prefix and input_text
+        adjusted_df['input_text'] = adjusted_df['prefix'] + adjusted_df['input_text']
+        adjusted_df = adjusted_df[['input_text', 'target_text']]
+
+        if save_to_csv:
+            adjusted_df.to_csv(os.path.join(self.dataset_dir_path, f'{dataset}_df.csv'), index=False)
+
+        return adjusted_df
+
 
 if __name__ == "__main__":
     dataset_config = {
@@ -367,16 +377,15 @@ if __name__ == "__main__":
         'AUGMENT_WHEN_UPSAMPLE': True
     }
     dataset_transformer = DatasetTransformer(config=dataset_config)
-
     dataset_dir_path = dataset_transformer.dataset_dir_path
-    for dataset in tqdm(['CCPE', 'MWOZ', 'ReDial', 'SGD']):
-        df = dataset_transformer.to_mtl_df(dataset)
-        df.to_csv(os.path.join(dataset_dir_path, f'{dataset}_df.csv'), index=False)
+
+    # to mtl df
+    for dataset in tqdm(['CCPE', 'MWOZ', 'ReDial', 'SGD'], desc='to_mtl_df'):
+        df = dataset_transformer.to_mtl_df(dataset, save_to_csv=True)
         print(f"{dataset} is over")
 
-    # sample_text = '''I'm looking for a cheap restaurant in the east part of town.
-    # the missing sock is a nice restaurant in the east part of town in the cheap price range What is the address and phone number?
-    # The address of The Missing Sock is Finders Corner Newmarket Road and the phone number is 01223 812660.
-    # May I help you with anything else today?'''
-    # augmented_text = dataset_transformer._augment_text(sample_text)
-    # print(augmented_text)
+    # finalise df
+    for dataset in tqdm(['CCPE', 'MWOZ', 'ReDial', 'SGD'], desc='finalise_df'):
+        dataset_transformer.finalise_df(dataset=dataset, save_to_csv=True)
+        print(f"{dataset} is over")
+
