@@ -13,6 +13,7 @@ Difference from original:
     3. (Optional) Can ensure that two roles alternate with each other.
         i.e. Transforms cases like SYSTEM-USER-USER-USER-SYSTEM to SYSTEM-USER-SYSTEM
 """
+from urllib.error import HTTPError
 from token_length_validator import check_token_length
 import os
 from pathlib import Path
@@ -41,7 +42,8 @@ class DatasetTransformer:
             nltk.download('wordnet')
             nltk.download('punkt')
             self.eda = EDA()
-            self.translate = Translate(src="en", to="es")
+            # Translate class is not initalised with languages yet
+            self.translate = Translate
 
         self.dataset_dir_path = os.path.join(
             Path(os.path.dirname(os.path.realpath(__file__))).parent, 'dataset')
@@ -265,26 +267,57 @@ class DatasetTransformer:
         """
         pass
 
-    @staticmethod
-    def augment_text(text) -> str:
+    def augment_text(self, text) -> str:
         """
         Available methods:
-
+            1. random_deltion
+            2. random_swap
+            3. random_insertion
+            4. synonym_replacement (wordnet based)
+            5. back translation
         """
-        rand_num = randint(1, 4)
+        rand_num = randint(1, 5)
+        rand_num = 5
+        if rand_num == 1:
+            augmented_text = self.eda.random_deletion(text, p=0.2)
+        elif rand_num == 2:
+            augmented_text = self.eda.random_swap(text,
+                                                  n=1 if int(len(text.split())*0.05) == 0 else int(len(text.split())*0.05))
+        elif rand_num == 3:
+            augmented_text = self.eda.random_insertion(text,
+                                                       n=1 if int(len(text.split())*0.05) == 0 else int(len(text.split())*0.05))
+        elif rand_num == 4:
+            augmented_text = self.eda.synonym_replacement(text,
+                                                          n=1 if int(len(text.split())*0.1) == 0 else int(len(text.split())*0.1))
+        else:
+            target_lang = sample(['ko', 'it', 'fa', 'es', 'el', 'la'], k=1)[0]
+            try:
+                augmented_text = self.translate(src='en',
+                                                to=target_lang).augment(text)
+            except HTTPError:
+                augmented_text = self.eda.synonym_replacement(text,
+                                                              n=1 if int(len(text.split())*0.1) == 0 else int(len(text.split())*0.1))
 
-        return ''
+        return augmented_text
 
 
 if __name__ == "__main__":
     dataset_config = {
         'LOOK_N_TURNS': 10,
-        'ENSURE_ALTERNATING_ROLES': True
+        'ENSURE_ALTERNATING_ROLES': True,
+        'AUGMENT_WHEN_UPSAMPLE': True
     }
     dataset_transformer = DatasetTransformer(config=dataset_config)
 
-    dataset_dir_path = dataset_transformer.dataset_dir_path
-    for dataset in ['CCPE', 'MWOZ', 'ReDial', 'SGD']:
-        df = dataset_transformer.to_mtl_df(dataset)
-        df.to_csv(os.path.join(dataset_dir_path,
-                  f'./{dataset}_df.csv'), index=False)
+    # dataset_dir_path = dataset_transformer.dataset_dir_path
+    # for dataset in ['CCPE', 'MWOZ', 'ReDial', 'SGD']:
+    #     df = dataset_transformer.to_mtl_df(dataset)
+    #     df.to_csv(os.path.join(dataset_dir_path,
+    #               f'./{dataset}_df.csv'), index=False)
+
+    sample_text = '''I'm looking for a cheap restaurant in the east part of town. 
+    the missing sock is a nice restaurant in the east part of town in the cheap price range What is the address and phone number? 
+    The address of The Missing Sock is Finders Corner Newmarket Road and the phone number is 01223 812660. 
+    May I help you with anything else today?'''
+    augmented_text = dataset_transformer.augment_text(sample_text)
+    print(augmented_text)

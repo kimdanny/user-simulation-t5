@@ -35,8 +35,8 @@ class T5Trainer:
         self.tokenizer = T5Tokenizer.from_pretrained(model_params["MODEL"])
         self.model = T5ForConditionalGeneration.from_pretrained(
             model_params["MODEL"]).to(self.device)
-        self.optimizer = torch.optim.Adam(params=self.model.parameters(),
-                                          lr=model_params["LEARNING_RATE"])
+        self.optimizer = torch.optim.AdamW(params=self.model.parameters(),
+                                           lr=model_params["LEARNING_RATE"])
 
         # For logging
         self._console = Console(record=True)
@@ -91,7 +91,7 @@ class T5Trainer:
             'num_workers': 2
         }
 
-        # Creation of Dataloaders for training and validation. 
+        # Creation of Dataloaders for training and validation.
         training_loader = DataLoader(training_set, **train_params)
         val_loader = DataLoader(val_set, **val_params)
 

@@ -1,4 +1,3 @@
-from dataset_transformer import DatasetTransformer
 from tqdm import tqdm
 import os
 from transformers import T5Tokenizer
@@ -23,6 +22,8 @@ def check_token_length(text, max_length=512):
 
 
 def experiment_token_length(dataset: str, config: dict, max_length: int = 512) -> None:
+    from dataset_transformer import DatasetTransformer
+    
     if not os.path.exists('experiment_logs'):
         os.makedirs('experiment_logs')
 
