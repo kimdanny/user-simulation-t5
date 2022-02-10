@@ -17,6 +17,7 @@ Difference from original:
 
     5. Different Upsampling factors by ratings
 """
+from re import sub
 from urllib.error import HTTPError
 from sklearn import datasets
 from tqdm import tqdm
@@ -85,8 +86,21 @@ class DatasetTransformer:
                 if text != 'OVERALL':
                     # append current text to the previous text
                     new_df.at[last_index, 'Text'] += f" {text}"
-                    # TODO: consider the set. can overlap
-                    new_df.at[last_index, 'Action'] += f" , {action}"
+
+                    # TODO: append action set
+                    last_action = new_df.at[last_index, 'Action']
+                    last_action = last_action.split(',')[0].strip()
+                    # if '+' in last_action:
+                    last_action_set = set(last_action.split('+'))
+                    current_action_set = set(action.split('+'))
+                    actions_to_add = last_action_set.union(current_action_set)
+                    if '' in actions_to_add:
+                        actions_to_add.remove('')
+                    new_df.at[last_index, 'Action'] = '+'.join(sorted(actions_to_add))
+                    # else:
+                    #     new_df.at[last_index, 'Action'] += f'+{action}'
+
+                    # just get the lastest score
                     new_df.at[last_index, 'Score'] = scores
 
             else:
@@ -185,6 +199,8 @@ class DatasetTransformer:
                     # preprocess
                     action = action.strip()
                     action = "None" if action == '' else action
+                    action = action.replace('+', ' , ')
+
                     scores = scores.split(',')
                     score = self._get_main_score(
                         [int(item) - 1 for item in scores])
@@ -228,15 +244,48 @@ class DatasetTransformer:
         else:
             return self._transform_v1(dataset=dataset)
 
-    def to_mtl_df(self, dataset: str, upsample=True, save_to_csv=True) -> pd.DataFrame:
+    def _augment_text(self, text: str) -> str:
+        """
+        Available methods (randomly chosen):
+            1. random_deltion
+            2. random_swap
+            3. random_insertion
+            4. synonym_replacement (wordnet based)
+            5. back translation
+        """
+        rand_num = randint(1, 5)
+        try:
+            if rand_num == 1:
+                augmented_text = self.eda.random_deletion(text, p=0.2)
+            elif rand_num == 2:
+                augmented_text = self.eda.random_swap(text,
+                                                    n=1 if int(len(text.split())*0.05) == 0 else int(len(text.split())*0.05))
+            elif rand_num == 3:
+                augmented_text = self.eda.random_insertion(text,
+                                                        n=1 if int(len(text.split())*0.05) == 0 else int(len(text.split())*0.05))
+            elif rand_num == 4:
+                augmented_text = self.eda.synonym_replacement(text,
+                                                            n=1 if int(len(text.split())*0.1) == 0 else int(len(text.split())*0.1))
+            else:
+                target_lang = sample(['ko', 'it', 'fa', 'es', 'el', 'la'], k=1)[0]
+                augmented_text = self.translate(src='en', to=target_lang).augment(text)
+                
+        except:
+            return text
+
+        return augmented_text
+
+    def to_mtl_df(self, dataset: str, upsample=True, save_to_csv=True, sub_directory=None) -> pd.DataFrame:
         """
         Returns a dataframe of columns 
             'prefix', 'input_text', and 'target_text' 
         """
-        histories, satisfactions, actions, _, utterances = self._transform(
-            dataset)
-        assert len(histories) == len(satisfactions) == \
-            len(actions) == len(utterances)
+        histories, satisfactions, actions, _, utterances = self._transform(dataset)
+        # print(dataset)
+        # print("action set: ")
+        # print(_)
+
+        assert len(histories) == len(satisfactions) == len(actions) == len(utterances)
 
         _prefix = ['sat: ' for _ in range(len(histories))] + \
             ['act: ' for _ in range(len(histories))] + \
@@ -285,41 +334,21 @@ class DatasetTransformer:
         }
 
         df = pd.DataFrame(df_data)
+
+        # Drop task according to the MTL task
+        if sub_directory == 'act-sat':
+            df = df.drop(df[df['prefix'] == 'utt: '].index)
+
         if save_to_csv:
-            df.to_csv(os.path.join(self.dataset_dir_path, f'{dataset}_df.csv'), index=False)
+            if sub_directory:
+                save_dir = os.path.join(self.dataset_dir_path, sub_directory)
+                if not os.path.exists(save_dir):
+                    os.makedirs(save_dir)
+                df.to_csv(os.path.join(save_dir, f'{dataset}_df.csv'), index=False)
+            else:
+                df.to_csv(os.path.join(self.dataset_dir_path, f'{dataset}_df.csv'), index=False)
 
         return df
-
-    def _augment_text(self, text: str) -> str:
-        """
-        Available methods (randomly chosen):
-            1. random_deltion
-            2. random_swap
-            3. random_insertion
-            4. synonym_replacement (wordnet based)
-            5. back translation
-        """
-        rand_num = randint(1, 5)
-        try:
-            if rand_num == 1:
-                augmented_text = self.eda.random_deletion(text, p=0.2)
-            elif rand_num == 2:
-                augmented_text = self.eda.random_swap(text,
-                                                    n=1 if int(len(text.split())*0.05) == 0 else int(len(text.split())*0.05))
-            elif rand_num == 3:
-                augmented_text = self.eda.random_insertion(text,
-                                                        n=1 if int(len(text.split())*0.05) == 0 else int(len(text.split())*0.05))
-            elif rand_num == 4:
-                augmented_text = self.eda.synonym_replacement(text,
-                                                            n=1 if int(len(text.split())*0.1) == 0 else int(len(text.split())*0.1))
-            else:
-                target_lang = sample(['ko', 'it', 'fa', 'es', 'el', 'la'], k=1)[0]
-                augmented_text = self.translate(src='en', to=target_lang).augment(text)
-                
-        except:
-            return text
-
-        return augmented_text
 
     def _token_length_adjuster(self, text, max_length=510) -> str:
         """
@@ -340,7 +369,7 @@ class DatasetTransformer:
 
             return final_text
 
-    def finalise_df(self, dataset=None, dataframe=None, save_to_csv=True) -> pd.DataFrame:
+    def finalise_df(self, dataset=None, dataframe=None, save_to_csv=True, sub_directory=None) -> pd.DataFrame:
         """
         :param dataset   -> string format dataset name
         :param dataframe -> dataframe with column 'prefix', 'input_text', and 'target_text'
@@ -351,7 +380,10 @@ class DatasetTransformer:
         else:
             # assume that we already have df saved in the dataset
             assert dataset is not None and isinstance(dataset, str)
-            df = pd.read_csv(os.path.join(self.dataset_dir_path, f'{dataset}_df.csv'))
+            if sub_directory:
+                df = pd.read_csv(os.path.join(self.dataset_dir_path, sub_directory, f'{dataset}_df.csv'))
+            else:
+                df = pd.read_csv(os.path.join(self.dataset_dir_path, f'{dataset}_df.csv'))
         
         adjusted_df = deepcopy(df)
         
@@ -365,7 +397,13 @@ class DatasetTransformer:
         adjusted_df = adjusted_df[['input_text', 'target_text']]
 
         if save_to_csv:
-            adjusted_df.to_csv(os.path.join(self.dataset_dir_path, f'{dataset}_df.csv'), index=False)
+            if sub_directory:
+                save_dir = os.path.join(self.dataset_dir_path, sub_directory)
+                if not os.path.exists(save_dir):
+                    os.makedirs(save_dir)
+                adjusted_df.to_csv(os.path.join(save_dir, f'{dataset}_df.csv'), index=False)
+            else:
+                adjusted_df.to_csv(os.path.join(self.dataset_dir_path, f'{dataset}_df.csv'), index=False)
 
         return adjusted_df
 
@@ -377,15 +415,45 @@ if __name__ == "__main__":
         'AUGMENT_WHEN_UPSAMPLE': True
     }
     dataset_transformer = DatasetTransformer(config=dataset_config)
-    dataset_dir_path = dataset_transformer.dataset_dir_path
 
+    """
+    ======Possible Datasets for different combinations of MTL tasks==== (ordered by importance)
+
+    CCPE, MWOZ, SGD
+    act-sat
+
+    CCPE, MWOZ, SGD
+    act-sat-utt
+
+    CCPE, MWOZ, SGD, ReDial
+    sat-utt
+
+    CCPE, MWOZ, SGD, ReDial-action
+    act-utt
+    
+    """
+    ############
+    # act-sat
+    ############
     # to mtl df
-    for dataset in tqdm(['CCPE', 'MWOZ', 'ReDial', 'SGD'], desc='to_mtl_df'):
-        df = dataset_transformer.to_mtl_df(dataset, save_to_csv=True)
+    for dataset in tqdm(['CCPE', 'MWOZ', 'SGD'], desc='to_mtl_df'):
+        df = dataset_transformer.to_mtl_df(dataset, save_to_csv=True, sub_directory='act-sat')
+        print(f"{dataset} is over")
+    # finalise df
+    for dataset in tqdm(['CCPE', 'MWOZ', 'SGD'], desc='finalise_df'):
+        dataset_transformer.finalise_df(dataset=dataset, save_to_csv=True, sub_directory='act-sat')
         print(f"{dataset} is over")
 
+
+    ############
+    # act-sat-utt
+    ############
+    # to mtl df
+    for dataset in tqdm(['CCPE', 'MWOZ', 'SGD'], desc='to_mtl_df'):
+        df = dataset_transformer.to_mtl_df(dataset, save_to_csv=True, sub_directory='act-sat-utt')
+        print(f"{dataset} is over")
     # finalise df
-    for dataset in tqdm(['CCPE', 'MWOZ', 'ReDial', 'SGD'], desc='finalise_df'):
-        dataset_transformer.finalise_df(dataset=dataset, save_to_csv=True)
+    for dataset in tqdm(['CCPE', 'MWOZ', 'SGD'], desc='finalise_df'):
+        dataset_transformer.finalise_df(dataset=dataset, save_to_csv=True, sub_directory='act-sat-utt')
         print(f"{dataset} is over")
 
