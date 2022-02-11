@@ -180,11 +180,22 @@ class T5Trainer:
 
 if __name__ == "__main__":
     # TODO: ARGPARSE
+    """
+    act-sat
+        MWOZ: training
+        CCPE: training
+
+    act-sat-utt
+    """
+
+    DATASET = 'CCPE'
+    TASK = 'act-sat'
+
     dataset_dir_path = os.path.join(Path(os.path.dirname(os.path.realpath(__file__))).parent, 'dataset')
-    dataset_act_sat_path = os.path.join(dataset_dir_path, 'act-sat')
+    dataset_act_sat_path = os.path.join(dataset_dir_path, TASK)
     # dataset_act_sat_utt_path = os.path.join(dataset_dir_path, 'act-sat-utt')
 
-    mwoz_path = os.path.join(dataset_act_sat_path, 'MWOZ_df.csv')
+    mwoz_path = os.path.join(dataset_act_sat_path, f'{DATASET}_df.csv')
     df = pd.read_csv(mwoz_path, index_col=False).astype(str)
     df = df.drop(df[df['target_text'] == 'None'].index)
     
@@ -204,5 +215,5 @@ if __name__ == "__main__":
 
     }
 
-    t5_trainer = T5Trainer(model_params=model_params, output_dir='act-sat_MWOZ')
+    t5_trainer = T5Trainer(model_params=model_params, output_dir=f'{TASK}_{DATASET}')
     t5_trainer.run(dataframe=df)
