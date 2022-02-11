@@ -23,7 +23,8 @@ class T5Trainer:
         self.source_column = source_column
         self.target_column = target_column
         if output_dir is not None:
-            self.output_dir = output_dir
+            self.output_dir = os.path.join(
+                Path(os.path.dirname(os.path.realpath(__file__))), output_dir)
         else:
             self.output_dir = os.path.join(
                 Path(os.path.dirname(os.path.realpath(__file__))), 'outputs')
@@ -109,7 +110,7 @@ class T5Trainer:
             'Generated Text': predictions,
             'Actual Text': actuals
         })
-        final_df.to_csv(os.path.join(self.output_dir, 'predictions.csv'))
+        final_df.to_csv(os.path.join(self.output_dir, 'predictions.csv'), index=False)
 
         self._console.save_text(os.path.join(self.output_dir, 'logs.txt'))
 
@@ -178,18 +179,16 @@ class T5Trainer:
 
 
 if __name__ == "__main__":
-    sample_dataset_dir_path = os.path.join(
-        Path(os.path.dirname(os.path.realpath(__file__))).parent, 'sample_dataset')
-    sample_data_path = os.path.join(sample_dataset_dir_path, 'eval.tsv')
-    df = pd.read_csv(sample_data_path, sep="\t",
-                     index_col=False).astype(str)
-    df = df[['prefix', 'input_text', 'target_text']]
-    df['colon'] = ': '
+    # TODO: ARGPARSE
+    dataset_dir_path = os.path.join(Path(os.path.dirname(os.path.realpath(__file__))).parent, 'dataset')
+    dataset_act_sat_path = os.path.join(dataset_dir_path, 'act-sat')
+    # dataset_act_sat_utt_path = os.path.join(dataset_dir_path, 'act-sat-utt')
 
-    df['input_text'] = df['prefix'] + df['colon'] + df['input_text']
-    df = df[['input_text', 'target_text']]
+    mwoz_path = os.path.join(dataset_act_sat_path, 'MWOZ_df.csv')
+    df = pd.read_csv(mwoz_path, index_col=False).astype(str)
+    df = df.drop(df[df['target_text'] == 'None'].index)
+    
     df = df.sample(frac=1).reset_index(drop=True)
-    df = df[:10_000]
     print(df.head(10))
     print(len(df))
 
@@ -197,13 +196,13 @@ if __name__ == "__main__":
         "MODEL": "t5-base",             # model_type: t5-base/t5-large
         "TRAIN_BATCH_SIZE": 4,          # training batch size
         "VALID_BATCH_SIZE": 4,          # validation batch size
-        "TRAIN_EPOCHS": 1,              # number of training epochs
+        "TRAIN_EPOCHS": 20,              # number of training epochs
         "LEARNING_RATE": 1e-4,          # learning rate
         "MAX_SOURCE_TEXT_LENGTH": 512,  # max length of source text
-        "MAX_TARGET_TEXT_LENGTH": 256,  # max length of target text
+        "MAX_TARGET_TEXT_LENGTH": 150,  # max length of target text
         "SEED": 42                      # set seed for reproducibility
 
     }
 
-    t5_trainer = T5Trainer(model_params=model_params)
+    t5_trainer = T5Trainer(model_params=model_params, output_dir='act-sat_MWOZ')
     t5_trainer.run(dataframe=df)

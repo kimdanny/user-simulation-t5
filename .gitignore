@@ -3,7 +3,9 @@ __pycache__/
 .vscode/
 .idea/
 
-
+# big file outputs
 validation_logs/
 outputs/
+act-sat*/
+act-sat-utt*/
 *.csv
