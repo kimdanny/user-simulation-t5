@@ -6,6 +6,7 @@ T5 MTL
 ## EC2 Environment setting
 **Deep Learning AMI (Amazon Linux 2) Version 57.0**  
 **source activate pytorch_p38**
+**source activate pytorch_p37**
 
 Please use one of the following commands to start the required environment with the framework of your choice:  
 
