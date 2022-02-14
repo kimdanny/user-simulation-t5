@@ -42,5 +42,5 @@ class MTLDataSet(Dataset):
             'source_ids': source_ids.to(dtype=torch.long),
             'source_mask': source_mask.to(dtype=torch.long),
             'target_ids': target_ids.to(dtype=torch.long),
-            'target_ids_y': target_ids.to(dtype=torch.long)
+            'target_ids_y': target_mask.to(dtype=torch.long)
         }
