@@ -39,7 +39,7 @@ class T5Trainer:
             model_params["MODEL"]).to(self.device)
         self.optimizer = torch.optim.AdamW(params=self.model.parameters(),
                                            lr=model_params["LEARNING_RATE"])
-        self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(self.optimizer, mode='min', patience=3)
+        self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(self.optimizer, mode='min', patience=3, verbose=True)
 
         # For logging
         self._console = Console(record=True)
@@ -179,6 +179,9 @@ class T5Trainer:
                         str(epoch), str(i), str(loss))
                     self._console.print(self._training_logger)
 
+                    # # LR scheduling based on every 500th train loss
+                    # self.scheduler.step(loss)
+
                 loss.backward()
                 self.optimizer.step()
 
@@ -186,6 +189,7 @@ class T5Trainer:
             # Validation and save the best model
             self._console.log(f"[Initiating Validation on epoch {epoch}]...\n")
             validation_loss = self.validate(validation_loader)
+            self._console.log(f"Validation loss: {validation_loss} | Prev best Validation loss: {best_val_loss}\n")
             if validation_loss < best_val_loss:
                 patience_for_early_stopping = 0
                 #save the best model
@@ -252,10 +256,11 @@ class T5Trainer:
                 generated_ids = self.model.generate(
                     input_ids=ids,
                     attention_mask=mask,
+                    min_length=1,
                     max_length=self.model_params['MAX_TARGET_TEXT_LENGTH'],
-                    num_beams=2,
-                    repetition_penalty=2.5,
-                    length_penalty=1.0,
+                    num_beams=5,
+                    repetition_penalty=3,
+                    length_penalty=0.8,
                     early_stopping=True
                 )
                 preds = [self.tokenizer.decode(g, skip_special_tokens=True,
@@ -298,20 +303,20 @@ if __name__ == "__main__":
     df = df.drop(df[df['target_text'] == 'None'].index)  # remove None action
     df = df.sample(frac=1).reset_index(drop=True)
     print(df.head(10))
-    print(len(df))
+    print(f"Length: {len(df)}")
 
     model_params = {
         "MODEL": "t5-base",             # model_type: t5-base/t5-large
-        "TRAIN_BATCH_SIZE": 4,          # training batch size
-        "VALID_BATCH_SIZE": 4,          # validation batch size
-        "TEST_BATCH_SIZE": 4,           # test batch size
+        "TRAIN_BATCH_SIZE": 8,          # training batch size
+        "VALID_BATCH_SIZE": 8,          # validation batch size
+        "TEST_BATCH_SIZE": 8,           # test batch size
         "TRAIN_RATIO": 0.8,
         "VALID_RATIO": 0.1,
-        "TRAIN_EPOCHS": 7,              # number of training epochs
+        "TRAIN_EPOCHS": 10,              # number of training epochs
         "EARLY_STOPPING_PATIENCE": 4,   # number of patience for early stopping
-        "LEARNING_RATE": 1e-4,          # learning rate
+        "LEARNING_RATE": 3e-5,          # learning rate
         "MAX_SOURCE_TEXT_LENGTH": 512,  # max length of source text
-        "MAX_TARGET_TEXT_LENGTH": 150,  # max length of target text
+        "MAX_TARGET_TEXT_LENGTH": 10,   # max length of target text
         "SEED": 42                      # set seed for reproducibility
 
     }
