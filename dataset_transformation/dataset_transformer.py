@@ -450,10 +450,45 @@ if __name__ == "__main__":
     ############
     # to mtl df
     for dataset in tqdm(['CCPE', 'MWOZ', 'SGD'], desc='to_mtl_df'):
-        df = dataset_transformer.to_mtl_df(dataset, save_to_csv=True, sub_directory='act-sat-utt')
+        df = dataset_transformer.to_mtl_df(dataset, save_to_csv=True, sub_directory='act-sat-utt_no-alt')
         print(f"{dataset} is over")
     # finalise df
     for dataset in tqdm(['CCPE', 'MWOZ', 'SGD'], desc='finalise_df'):
-        dataset_transformer.finalise_df(dataset=dataset, save_to_csv=True, sub_directory='act-sat-utt')
+        dataset_transformer.finalise_df(dataset=dataset, save_to_csv=True, sub_directory='act-sat-utt_no-alt')
+        print(f"{dataset} is over")
+
+
+
+    dataset_config = {
+        'LOOK_N_TURNS': 10,
+        'ENSURE_ALTERNATING_ROLES': False,
+        'AUGMENT_WHEN_UPSAMPLE': True
+    }
+    dataset_transformer = DatasetTransformer(config=dataset_config)
+
+
+    ############
+    # act-sat_no-alt
+    ############
+    # to mtl df
+    for dataset in tqdm(['CCPE', 'MWOZ', 'SGD'], desc='to_mtl_df'):
+        df = dataset_transformer.to_mtl_df(dataset, save_to_csv=True, sub_directory='act-sat_no-alt')
+        print(f"{dataset} is over")
+    # finalise df
+    for dataset in tqdm(['CCPE', 'MWOZ', 'SGD'], desc='finalise_df'):
+        dataset_transformer.finalise_df(dataset=dataset, save_to_csv=True, sub_directory='act-sat_no-alt')
+        print(f"{dataset} is over")
+
+
+    ############
+    # act-sat-utt_no-alt
+    ############
+    # to mtl df
+    for dataset in tqdm(['CCPE', 'MWOZ', 'SGD'], desc='to_mtl_df'):
+        df = dataset_transformer.to_mtl_df(dataset, save_to_csv=True, sub_directory='act-sat-utt_no-alt')
+        print(f"{dataset} is over")
+    # finalise df
+    for dataset in tqdm(['CCPE', 'MWOZ', 'SGD'], desc='finalise_df'):
+        dataset_transformer.finalise_df(dataset=dataset, save_to_csv=True, sub_directory='act-sat-utt_no-alt')
         print(f"{dataset} is over")
 
