@@ -336,7 +336,7 @@ class DatasetTransformer:
         df = pd.DataFrame(df_data)
 
         # Drop task according to the MTL task
-        if sub_directory == 'act-sat':
+        if sub_directory in {'act-sat', 'act-sat_no-alt'}:
             df = df.drop(df[df['prefix'] == 'utt: '].index)
 
         if save_to_csv:
