@@ -13,7 +13,7 @@ from loader import MTLDataSet
 from rich.table import Column, Table
 from rich import box
 from rich.console import Console
-import sys
+import argparse
 
 
 class T5Trainer:
@@ -39,6 +39,7 @@ class T5Trainer:
             model_params["MODEL"]).to(self.device)
         self.optimizer = torch.optim.AdamW(params=self.model.parameters(),
                                            lr=model_params["LEARNING_RATE"])
+        self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(self.optimizer, mode='min', patience=3)
 
         # For logging
         self._console = Console(record=True)
@@ -116,14 +117,9 @@ class T5Trainer:
 
         # Train and validate
         self._console.log(f'[Initiating Fine Tuning]...\n')
-        self.train(training_loader, validation_loader)
+        self.train(training_loader, validation_loader)        
 
-        # Saving the model after training
-        save_path = os.path.join(self.output_dir, "model_files")
-        self.model.save_pretrained(save_path)
-        self.tokenizer.save_pretrained(save_path)
-
-        # evaluating the validation dataset
+        # evaluating the test dataset and generate prediction report
         self._console.log(f"[Initiating Test]...\n")
         predictions, actuals = self.test(test_loader)
         final_df = pd.DataFrame({
@@ -146,10 +142,10 @@ class T5Trainer:
         """
         After each epoch of training, validate with validation set and save the best model
         """
-        # TODO
-        # TODO
-        # TODO
-        minimum_loss = np.inf
+        best_val_loss = np.inf
+        patience_for_early_stopping = 0
+        model_save_path = os.path.join(self.output_dir, "model_files")
+
         # TRAIN
         self.model.train()
         for epoch in range(self.model_params["TRAIN_EPOCHS"]):
@@ -171,6 +167,7 @@ class T5Trainer:
 
                 # outputs = self.model(input_ids=input_ids, attention_mask=input_mask,
                 #                      labels=target_ids, decoder_attention_mask=target_mask)
+                self.optimizer.zero_grad()
 
                 outputs = self.model(input_ids=ids, attention_mask=mask,
                                      decoder_input_ids=y_ids, labels=lm_labels,
@@ -182,17 +179,29 @@ class T5Trainer:
                         str(epoch), str(i), str(loss))
                     self._console.print(self._training_logger)
 
-                self.optimizer.zero_grad()
                 loss.backward()
                 self.optimizer.step()
 
-            # Validation and save best model
+
+            # Validation and save the best model
             self._console.log(f"[Initiating Validation on epoch {epoch}]...\n")
-            # TODO
-            # TODO
-            # TODO
-            # TODO
             validation_loss = self.validate(validation_loader)
+            if validation_loss < best_val_loss:
+                patience_for_early_stopping = 0
+                #save the best model
+                self._console.log(f"Better validation loss, so saving the model...\n")
+                self.model.save_pretrained(model_save_path)
+                self.tokenizer.save_pretrained(model_save_path)
+                best_val_loss = validation_loss
+            else:
+                patience_for_early_stopping += 1
+
+            # early stopping if validation loss is not decreasing within the given patience number
+            if patience_for_early_stopping == self.model_params['EARLY_STOPPING_PATIENCE']:
+                break
+
+            # LR scheduling based on validation loss
+            self.scheduler.step(validation_loss)
         
     
     def validate(self, loader):
@@ -262,7 +271,6 @@ class T5Trainer:
 
 
 if __name__ == "__main__":
-    # TODO: ARGPARSE
     """
     act-sat
         MWOZ: training
@@ -270,18 +278,23 @@ if __name__ == "__main__":
 
     act-sat-utt
     """
+    parser = argparse.ArgumentParser(description='pass the TASK name and DATASET name to train a T5 MTL model')
+    parser.add_argument('-t','--task', help='e.g. act-sat', required=True)
+    parser.add_argument('-d','--dataset', help='e.g. MWOZ', required=True)
+    args = vars(parser.parse_args())
 
-    DATASET = 'CCPE'
-    TASK = 'act-sat'
-
-    dataset_dir_path = os.path.join(Path(os.path.dirname(os.path.realpath(__file__))).parent, 'dataset')
-    dataset_act_sat_path = os.path.join(dataset_dir_path, TASK)
-    # dataset_act_sat_utt_path = os.path.join(dataset_dir_path, 'act-sat-utt')
-
-    mwoz_path = os.path.join(dataset_act_sat_path, f'{DATASET}_df.csv')
-    df = pd.read_csv(mwoz_path, index_col=False).astype(str)
-    df = df.drop(df[df['target_text'] == 'None'].index)
+    TASK = args['task']
+    DATASET = args['dataset']
+    assert TASK in {'act-sat', 'act-sat-utt'}
+    assert DATASET in {'CCPE', 'MWOZ', 'SGD', 'ReDial'}
+    del parser, args
     
+
+    dataset_dir_path = os.path.join(Path(os.path.dirname(os.path.realpath(__file__))).parent, 'dataset', TASK)
+    dataset_path = os.path.join(dataset_dir_path, f'{DATASET}_df.csv')
+    
+    df = pd.read_csv(dataset_path, index_col=False).astype(str)
+    df = df.drop(df[df['target_text'] == 'None'].index)  # remove None action
     df = df.sample(frac=1).reset_index(drop=True)
     print(df.head(10))
     print(len(df))
@@ -290,10 +303,11 @@ if __name__ == "__main__":
         "MODEL": "t5-base",             # model_type: t5-base/t5-large
         "TRAIN_BATCH_SIZE": 4,          # training batch size
         "VALID_BATCH_SIZE": 4,          # validation batch size
-        "TEST_BATCH_SIZE": 4,
+        "TEST_BATCH_SIZE": 4,           # test batch size
         "TRAIN_RATIO": 0.8,
         "VALID_RATIO": 0.1,
         "TRAIN_EPOCHS": 7,              # number of training epochs
+        "EARLY_STOPPING_PATIENCE": 3,   # number of patience for early stopping
         "LEARNING_RATE": 1e-4,          # learning rate
         "MAX_SOURCE_TEXT_LENGTH": 512,  # max length of source text
         "MAX_TARGET_TEXT_LENGTH": 150,  # max length of target text
