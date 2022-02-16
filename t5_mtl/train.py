@@ -288,6 +288,7 @@ if __name__ == "__main__":
     assert TASK in {'act-sat', 'act-sat-utt'}
     assert DATASET in {'CCPE', 'MWOZ', 'SGD', 'ReDial'}
     del parser, args
+    print(f"{DATASET} will be trained for {TASK} task")
     
 
     dataset_dir_path = os.path.join(Path(os.path.dirname(os.path.realpath(__file__))).parent, 'dataset', TASK)
