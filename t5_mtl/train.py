@@ -308,7 +308,7 @@ if __name__ == "__main__":
         "TRAIN_RATIO": 0.8,
         "VALID_RATIO": 0.1,
         "TRAIN_EPOCHS": 7,              # number of training epochs
-        "EARLY_STOPPING_PATIENCE": 3,   # number of patience for early stopping
+        "EARLY_STOPPING_PATIENCE": 4,   # number of patience for early stopping
         "LEARNING_RATE": 1e-4,          # learning rate
         "MAX_SOURCE_TEXT_LENGTH": 512,  # max length of source text
         "MAX_TARGET_TEXT_LENGTH": 150,  # max length of target text
