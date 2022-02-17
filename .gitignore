@@ -10,3 +10,9 @@ act-sat*/
 act-sat-utt*/
 *.csv
 new_dataset/
+
+# simpletransformers
+cache_dir/
+runs/
+predictions/
+results/
