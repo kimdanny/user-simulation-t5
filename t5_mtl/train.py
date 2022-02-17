@@ -259,7 +259,7 @@ class T5Trainer:
                     min_length=1,
                     max_length=self.model_params['MAX_TARGET_TEXT_LENGTH'],
                     num_beams=5,
-                    repetition_penalty=3,
+                    repetition_penalty=2.5,  # should be strictly positive float
                     length_penalty=0.8,
                     early_stopping=True
                 )
@@ -290,8 +290,8 @@ if __name__ == "__main__":
 
     TASK = args['task']
     DATASET = args['dataset']
-    assert TASK in {'act-sat', 'act-sat-utt'}
-    assert DATASET in {'CCPE', 'MWOZ', 'SGD', 'ReDial'}
+    assert TASK in {'act-sat', 'act-sat-utt', 'act-sat_no-alt', 'act-sat-utt_no-alt'}
+    assert DATASET in {'CCPE', 'MWOZ', 'SGD'}
     del parser, args
     print(f"{DATASET} will be trained for {TASK} task")
     
@@ -300,8 +300,8 @@ if __name__ == "__main__":
     dataset_path = os.path.join(dataset_dir_path, f'{DATASET}_df.csv')
     
     df = pd.read_csv(dataset_path, index_col=False).astype(str)
-    df = df.drop(df[df['target_text'] == 'None'].index)  # remove None action
     df = df.sample(frac=1).reset_index(drop=True)
+    # df = df.sample(100).reset_index(drop=True)
     print(df.head(10))
     print(f"Length: {len(df)}")
 
@@ -312,7 +312,7 @@ if __name__ == "__main__":
         "TEST_BATCH_SIZE": 8,           # test batch size
         "TRAIN_RATIO": 0.8,
         "VALID_RATIO": 0.1,
-        "TRAIN_EPOCHS": 10,              # number of training epochs
+        "TRAIN_EPOCHS": 20,              # number of training epochs
         "EARLY_STOPPING_PATIENCE": 4,   # number of patience for early stopping
         "LEARNING_RATE": 3e-5,          # learning rate
         "MAX_SOURCE_TEXT_LENGTH": 512,  # max length of source text
