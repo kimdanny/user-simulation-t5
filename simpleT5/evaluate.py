@@ -55,6 +55,9 @@ def evaluate_action(output_dict):
     # return acc, precision, recall, f1
     pass
 
+def evaluate_utterance(output_dict):
+    pass
+
 
 if __name__ == "__main__":
     # parser = argparse.ArgumentParser(description='pass the TASK name and DATASET name to train a T5 MTL model')
