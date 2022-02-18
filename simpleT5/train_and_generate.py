@@ -82,7 +82,7 @@ model_args = {
     "train_batch_size": 4,
     "eval_batch_size": 4,
 
-    "num_train_epochs": 10,
+    "num_train_epochs": 7,
     # 'learning_rate': 4e-5,
     'optimizer': 'AdamW',
     'scheduler': 'linear_schedule_with_warmup',
@@ -93,7 +93,7 @@ model_args = {
     'early_stopping_patience': 3,
 
     "evaluate_during_training": True,
-    "evaluate_during_training_steps": len(train_df) - 1,
+    "evaluate_during_training_steps": 5000,
     "evaluate_during_training_verbose": True,
 
     "overwrite_output_dir": True,
