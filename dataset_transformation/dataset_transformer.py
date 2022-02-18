@@ -287,9 +287,9 @@ class DatasetTransformer:
 
         assert len(histories) == len(satisfactions) == len(actions) == len(utterances)
 
-        _prefix = ['sat: ' for _ in range(len(histories))] + \
-            ['act: ' for _ in range(len(histories))] + \
-            ['utt: ' for _ in range(len(histories))]
+        _prefix = ['satisfaction score: ' for _ in range(len(histories))] + \
+            ['action prediction: ' for _ in range(len(histories))] + \
+            ['utterance generation: ' for _ in range(len(histories))]
         _input = histories * 3
         _target = satisfactions + actions + utterances
 
@@ -317,7 +317,7 @@ class DatasetTransformer:
 
             upsample_indices = [i for i, sat in enumerate(satisfactions) if sat != 3]
             upsample_indices = upsample_indices * upsample_factors[dataset]
-            upsample_prefixes = ['sat: '] * len(upsample_indices)
+            upsample_prefixes = ['satisfaction score: '] * len(upsample_indices)
             upsampled_inputs = [augmenting_func(histories[i]) for i in upsample_indices]
             upsampled_targets = [satisfactions[i] for i in upsample_indices]
 
@@ -337,7 +337,7 @@ class DatasetTransformer:
 
         # Drop task according to the MTL task
         if sub_directory in {'act-sat', 'act-sat_no-alt'}:
-            df = df.drop(df[df['prefix'] == 'utt: '].index)
+            df = df.drop(df[df['prefix'] == 'utterance generation: '].index)
 
         if save_to_csv:
             if sub_directory:
@@ -417,7 +417,7 @@ if __name__ == "__main__":
     dataset_transformer = DatasetTransformer(config=dataset_config)
 
     """
-    ======Possible Datasets for different combinations of MTL tasks==== (ordered by importance)
+    ======Possible Datasets for different combinations of MTL tasks====
 
     CCPE, MWOZ, SGD
     act-sat
