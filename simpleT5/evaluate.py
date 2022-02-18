@@ -19,7 +19,7 @@ def spearman(x, y):
     return 1.0 - 6.0 * d / float(len(x) * (len(y) ** 2 - 1.0))
 
 
-def test_satisfaction(output_dict):
+def evaluate_satisfaction(output_dict):
     truths = [int(score) for score in output_dict['truth']]
     preds = [int(score) for score in output_dict['preds']]
     
@@ -44,7 +44,7 @@ def test_satisfaction(output_dict):
 
 
 # TODO: figure out multiple truths -> e.g
-def test_action(output_dict):
+def evaluate_action(output_dict):
     # prediction = [int(line.split(',')[0]) for line in data]
     # label = [int(line.split(',')[1]) for line in data]
     # acc = sum([int(p == l) for p, l in zip(prediction, label)]) / len(label)
@@ -79,10 +79,10 @@ if __name__ == "__main__":
     # with open(os.path.join(predictions_dir_path, f"predictions_dict.pickle"), 'rb') as f:
     #     output_dict = pickle.load(f)
 
-    UAR, kappa, rho, bi_f1 = test_satisfaction(output_dict['satisfaction score'])
+    UAR, kappa, rho, bi_f1 = evaluate_satisfaction(output_dict['satisfaction score'])
     print(UAR, kappa, rho, bi_f1)
 
-    acc, precision, recall, f1 = test_action(output_dict['action prediction'])
+    acc, precision, recall, f1 = evaluate_action(output_dict['action prediction'])
     print(acc, precision, recall, f1)
 
 
@@ -93,7 +93,7 @@ if __name__ == "__main__":
     for task, outputs in output_dict.items():
         if task == "satisfaction score":
             try:
-                UAR, kappa, rho, bi_f1 = test_satisfaction(output_dict[task])
+                UAR, kappa, rho, bi_f1 = evaluate_satisfaction(output_dict[task])
                 results_dict[task] = {
                     "UAR": UAR,
                     "Kappa": kappa,
@@ -107,11 +107,11 @@ if __name__ == "__main__":
                 print(f"bi-F1: {bi_f1}")
                 print()
             except Exception as e:
-                print(f"Error from {task} testing:")
+                print(f"Error from {task} evaluation:")
                 print(e)
         elif task == "action prediction":
             try:
-                acc, precision, recall, f1 = test_action(output_dict[task])
+                acc, precision, recall, f1 = evaluate_action(output_dict[task])
                 results_dict[task] = {
                     "Acc": acc,
                     "Prec": precision,
@@ -125,7 +125,7 @@ if __name__ == "__main__":
                 print(f"F1: {f1}")
                 print()
             except Exception as e:
-                print(f"Error from {task} testing:")
+                print(f"Error from {task} evaluation:")
                 print(e)
         elif task == 'utterance generation':
             # TODO: BLEU, STS

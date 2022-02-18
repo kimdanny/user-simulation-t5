@@ -57,17 +57,17 @@ m = len(df.index)
 train_end = int(TRAIN_RATIO * m)
 validate_end = int(VALID_RATIO * m) + train_end
 train_df = df.iloc[perm[:train_end]]
-eval_df = df.iloc[perm[train_end:validate_end]]
+valid_df = df.iloc[perm[train_end:validate_end]]
 test_df = df.iloc[perm[validate_end:]]
 
 train_df = train_df.reset_index(drop=True)
-eval_df = eval_df.reset_index(drop=True)
+valid_df = valid_df.reset_index(drop=True)
 test_df = test_df.reset_index(drop=True)
 del train_end, validate_end, m, perm
 
 print(f"FULL Dataset: {df.shape}")
 print(f"TRAIN Dataset: {train_df.shape}")
-print(f"VALIDATION Dataset: {eval_df.shape}")
+print(f"VALIDATION Dataset: {valid_df.shape}")
 print(f"TEST Dataset: {test_df.shape}")
 
 
@@ -82,7 +82,7 @@ model_args = {
     "train_batch_size": 4,
     "eval_batch_size": 4,
 
-    "num_train_epochs": 1,
+    "num_train_epochs": 10,
     # 'learning_rate': 4e-5,
     'optimizer': 'AdamW',
     'scheduler': 'linear_schedule_with_warmup',
@@ -93,7 +93,7 @@ model_args = {
     'early_stopping_patience': 3,
 
     "evaluate_during_training": True,
-    "evaluate_during_training_steps": 500,
+    "evaluate_during_training_steps": len(train_df) - 1,
     "evaluate_during_training_verbose": True,
 
     "overwrite_output_dir": True,
@@ -111,7 +111,7 @@ model_args = {
 
 model = T5Model("t5", "t5-base", args=model_args, use_cuda=True)
 
-model.train_model(train_df, eval_data=eval_df)
+model.train_model(train_df, eval_data=valid_df)
 
 
 ##########
@@ -142,8 +142,8 @@ generation_args = {
     "num_return_sequences": 1  # The number of independently computed returned sequences for each element in the batch.
 }
 
-# Load the trained model
-model = T5Model("t5", output_dir_path, args=generation_args)
+# Load the best trained model
+model = T5Model("t5", best_model_dir_path, args=generation_args)
 
 # Prepare the data for testing
 to_predict = [
