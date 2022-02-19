@@ -10,6 +10,7 @@ import torch
 import argparse
 import shutil
 import pickle
+torch.multiprocessing.set_sharing_strategy('file_system')
 
 
 torch.manual_seed(42)  # pytorch random seed
@@ -33,13 +34,17 @@ VALID_RATIO = 0.1
 
 
 TASK = 'act-sat_no-alt'
-DATASET = 'SGD'
+DATASET = 'CCPE'
 dataset_dir_path = os.path.join(Path(os.path.dirname(os.path.realpath(__file__))).parent, 'dataset', TASK)
 dataset_path = os.path.join(dataset_dir_path, f'{DATASET}_df.csv')
 
-# clear the task-dataset output directory
+# clear the task-dataset output directory if confirmed
 if os.path.exists(os.path.join(Path(os.path.dirname(os.path.realpath(__file__))), TASK, DATASET)):
-    shutil.rmtree(os.path.join(Path(os.path.dirname(os.path.realpath(__file__))), TASK, DATASET))
+    clear_confirmation = input(f"Do you want to clear '{os.path.join(Path(os.path.dirname(os.path.realpath(__file__))), TASK, DATASET)}' ?? [yes/no]")
+    if clear_confirmation == 'yes':
+        shutil.rmtree(os.path.join(Path(os.path.dirname(os.path.realpath(__file__))), TASK, DATASET))
+    else:
+        pass
 
 output_dir_path = os.path.join(Path(os.path.dirname(os.path.realpath(__file__))), TASK, DATASET, 'output')
 best_model_dir_path = os.path.join(output_dir_path, 'best_model')
@@ -93,7 +98,7 @@ model_args = {
     'early_stopping_patience': 3,
 
     "evaluate_during_training": True,
-    "evaluate_during_training_steps": 5000,
+    "evaluate_during_training_steps": len(train_df)//4 - 1,
     "evaluate_during_training_verbose": True,
 
     "overwrite_output_dir": True,

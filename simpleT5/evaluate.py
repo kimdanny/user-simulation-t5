@@ -8,6 +8,7 @@ import json
 import os
 from pathlib import Path
 import argparse
+from tqdm import tqdm
 
 
 def evaluate_satisfaction(output_dict):
@@ -70,65 +71,67 @@ if __name__ == "__main__":
     # del parser, args
     # print(f"{TASK}/{DATASET} will be evaluated")
 
-    TASK = 'act-sat-utt_no-alt'
-    DATASET = 'CCPE'
 
-    predictions_dir_path = os.path.join(Path(os.path.dirname(os.path.realpath(__file__))), TASK, DATASET, 'predictions')
-    results_dir_path = os.path.join(Path(os.path.dirname(os.path.realpath(__file__))), TASK, DATASET, 'results')
+    for TASK in tqdm(['act-sat-utt_no-alt', 'act-sat_no-alt']):
+        for DATASET in ['MWOZ','SGD','CCPE']:
 
-    output_dict = dict()
-    with open(os.path.join(predictions_dir_path, f"predictions_dict.pickle"), 'rb') as f:
-        output_dict = pickle.load(f)
+            predictions_dir_path = os.path.join(Path(os.path.dirname(os.path.realpath(__file__))), TASK, DATASET, 'predictions')
+            results_dir_path = os.path.join(Path(os.path.dirname(os.path.realpath(__file__))), TASK, DATASET, 'results')
+
+            output_dict = dict()
+            with open(os.path.join(predictions_dir_path, f"predictions_dict.pickle"), 'rb') as f:
+                output_dict = pickle.load(f)
 
 
-    ###############
-    # Save the results
-    ###############
-    results_dict = {}
+            ###############
+            # Save the results
+            ###############
+            results_dict = {
+                'task': TASK,
+                'dataset': DATASET,
+            }
 
-    print("-----------------------------------")
-    print("Results: ")
-    for task, outputs in output_dict.items():
-        if task == "satisfaction score":
-            try:
-                UAR, kappa, rho, bi_f1 = evaluate_satisfaction(output_dict[task])
-                results_dict[task] = {
-                    "UAR": UAR,
-                    "Kappa": kappa,
-                    "Rho": rho,
-                    "bi-F1": bi_f1
-                }
-            except Exception as e:
-                print(f"Error from {task} evaluation:")
-                print(e)
-        elif task == "action prediction":
-            try:
-                acc, precision, recall, f1 = evaluate_action(output_dict[task])
-                results_dict[task] = {
-                    "Acc": acc,
-                    "Prec": precision,
-                    "Recall": recall,
-                    "F1": f1
-                }
-            except Exception as e:
-                print(f"Error from {task} evaluation:")
-                print(e)
-        elif task == 'utterance generation':
-            try:
-                bleu_1, bleu_4, rouge_1_f1, rouge_2_f1, rouge_L_f1, sts = evaluate_utterance(output_dict[task])
-                results_dict[task] = {
-                    "BLEU-1": bleu_1,
-                    "BLEU_4": bleu_4,
-                    "ROUGE-1_f1": rouge_1_f1,
-                    "ROUGE-2_f1": rouge_2_f1,
-                    "ROUGE-L_f1": rouge_L_f1,
-                    "STS": sts
-                }
-            except Exception as e:
-                print(f"Error from {task} evaluation:")
-                print(e)
+            for task, outputs in output_dict.items():
+                if task == "satisfaction score":
+                    try:
+                        UAR, kappa, rho, bi_f1 = evaluate_satisfaction(output_dict[task])
+                        results_dict[task] = {
+                            "UAR": UAR,
+                            "Kappa": kappa,
+                            "Rho": rho,
+                            "bi-F1": bi_f1
+                        }
+                    except Exception as e:
+                        print(f"Error from {task} evaluation:")
+                        print(e)
+                elif task == "action prediction":
+                    try:
+                        acc, precision, recall, f1 = evaluate_action(output_dict[task])
+                        results_dict[task] = {
+                            "Acc": acc,
+                            "Prec": precision,
+                            "Recall": recall,
+                            "F1": f1
+                        }
+                    except Exception as e:
+                        print(f"Error from {task} evaluation:")
+                        print(e)
+                elif task == 'utterance generation':
+                    try:
+                        bleu_1, bleu_4, rouge_1_f1, rouge_2_f1, rouge_L_f1, sts = evaluate_utterance(output_dict[task])
+                        results_dict[task] = {
+                            "BLEU-1": bleu_1,
+                            "BLEU_4": bleu_4,
+                            "ROUGE-1_f1": rouge_1_f1,
+                            "ROUGE-2_f1": rouge_2_f1,
+                            "ROUGE-L_f1": rouge_L_f1,
+                            "STS": sts
+                        }
+                    except Exception as e:
+                        print(f"Passing Error from {task} evaluation:")
+                        print(e)
 
-    # save to path
-    Path(results_dir_path).mkdir(parents=True, exist_ok=True)
-    with open(os.path.join(results_dir_path, f"results.json"), "w") as f:
-        json.dump(results_dict, f, indent=4)
+            # save to path
+            Path(results_dir_path).mkdir(parents=True, exist_ok=True)
+            with open(os.path.join(results_dir_path, f"{TASK}_{DATASET}_results.json"), "w") as f:
+                json.dump(results_dict, f, indent=4)
