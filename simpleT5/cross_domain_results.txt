@@ -1,0 +1,54 @@
+MWOZ Model does generation on SGD
+Satisfaction Result: 
+UAR,    kappa,    rho,    bi_f1
+0.24725, 0.1189, 0.39837, 0.16459
+
+Utterance Generation Result: 
+bleu_1,   bleu_4,   rouge_1_f1,   rouge_2_f1,   rouge_L_f1,   sts
+0.16477, 0.00523, 0.11795, 0.02492, 0.11252, 0.2369
+____________________
+MWOZ Model does generation on CCPE
+Satisfaction Result: 
+UAR,    kappa,    rho,    bi_f1
+0.27497, 0.11808, 0.32831, 0.40469
+
+Utterance Generation Result: 
+bleu_1,   bleu_4,   rouge_1_f1,   rouge_2_f1,   rouge_L_f1,   sts
+0.10626, 0.0, 0.09509, 0.00181, 0.08821, 0.10802
+____________________
+SGD Model does generation on MWOZ
+Satisfaction Result: 
+UAR,    kappa,    rho,    bi_f1
+0.28043, 0.20092, 0.21098, 0.3474
+
+Utterance Generation Result: 
+bleu_1,   bleu_4,   rouge_1_f1,   rouge_2_f1,   rouge_L_f1,   sts
+0.13727, 0.00564, 0.1135, 0.0256, 0.1082, 0.22641
+____________________
+SGD Model does generation on CCPE
+Satisfaction Result: 
+UAR,    kappa,    rho,    bi_f1
+0.23321, 0.09184, 0.05696, 0.25502
+
+Utterance Generation Result: 
+bleu_1,   bleu_4,   rouge_1_f1,   rouge_2_f1,   rouge_L_f1,   sts
+0.12301, 0.00049, 0.12861, 0.01154, 0.12249, 0.24957
+____________________
+CCPE Model does generation on MWOZ
+Satisfaction Result: 
+UAR,    kappa,    rho,    bi_f1
+0.26596, 0.14309, 0.03394, 0.49074
+
+Utterance Generation Result: 
+bleu_1,   bleu_4,   rouge_1_f1,   rouge_2_f1,   rouge_L_f1,   sts
+0.06318, 0.0, 0.05781, 0.00273, 0.05512, 0.10824
+____________________
+CCPE Model does generation on SGD
+Satisfaction Result: 
+UAR,    kappa,    rho,    bi_f1
+0.26362, 0.13988, 0.1749, 0.28111
+
+Utterance Generation Result: 
+bleu_1,   bleu_4,   rouge_1_f1,   rouge_2_f1,   rouge_L_f1,   sts
+0.12085, 0.0, 0.08915, 0.00289, 0.08681, 0.1835
+____________________
