@@ -31,7 +31,7 @@ def evaluate_satisfaction(output_dict):
     bi_precision = sum([int(p == l) for p, l in zip(bi_preds, bi_truths) if p == 1]) / max(bi_preds.count(1), 1)
     bi_f1 = 2 * bi_recall * bi_precision / max((bi_recall + bi_precision), 1)
 
-    return UAR, kappa, rho, bi_f1
+    return round(UAR, 5), round(kappa, 5), round(rho, 5), round(bi_f1, 5)
 
 
 def evaluate_action(output_dict):
@@ -42,7 +42,7 @@ def evaluate_action(output_dict):
     recall = recall_score(label, prediction, average='macro', zero_division=0)
     f1 = f1_score(label, prediction, average='macro', zero_division=0)
 
-    return acc, precision, recall, f1
+    return round(acc, 5), round(precision, 5), round(recall, 5), round(f1, 5)
 
 
 def evaluate_utterance(output_dict):

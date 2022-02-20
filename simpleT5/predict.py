@@ -14,8 +14,8 @@ torch.multiprocessing.set_sharing_strategy('file_system')
 TASK_load = 'act-sat-utt_no-alt'
 DATASET_load = 'MWOZ'
 
-output_dir_path = os.path.join(Path(os.path.dirname(os.path.realpath(__file__))), TASK_load, DATASET_load, 'output')
-best_model_load_path = os.path.join(output_dir_path, 'best_model')
+best_model_load_path = os.path.join(Path(os.path.dirname(os.path.realpath(__file__))), 
+                                    TASK_load, DATASET_load, 'output', 'best_model')
 
 
 generation_args = {
