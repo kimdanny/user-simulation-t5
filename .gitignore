@@ -8,6 +8,7 @@ validation_logs/
 outputs/
 act-sat*/
 act-sat-utt*/
+utt_no-alt/
 *.csv
 new_dataset/
 
