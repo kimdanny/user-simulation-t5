@@ -72,7 +72,7 @@ if __name__ == "__main__":
     # print(f"{TASK}/{DATASET} will be evaluated")
 
 
-    for TASK in tqdm(['act-sat-utt_no-alt', 'act-sat_no-alt']):
+    for TASK in tqdm(['act-sat_no-alt', 'act-sat-utt_no-alt''utt_no-alt']):
         for DATASET in ['MWOZ','SGD','CCPE']:
 
             predictions_dir_path = os.path.join(Path(os.path.dirname(os.path.realpath(__file__))), TASK, DATASET, 'predictions')
