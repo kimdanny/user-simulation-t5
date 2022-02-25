@@ -2,8 +2,12 @@
 User Simulator that generates user-side utterance, predicts user's next action and satisfaction level.
 
 <p align="center">
-  <img src="imgs/t5-mtl-diagram.png" width="400">
+    <img src="imgs/t5-mtl-diagram.png" width="400">
 </p>
+<p align="center">
+    <b>Inference example of the trained T5 model on MultiWOZ 2.1 dataset</b>
+</p>
+
 
 We propose a multi-task based deep learning user simulator for goal oriented dialogue system that is trained to predict users’ satisfaction and action, while generating the users’ next utterance at the same time with shared weights. 
 We show that 
