@@ -3,7 +3,7 @@ This dataset is developed within the following paper:
 *Weiwei Sun, Shuo Zhang, Krisztian Balog, Zhaochun Ren, Pengjie Ren, Zhumin Chen, Maarten de Rijke. "Simulating User Satisfaction for the Evaluation of Task-oriented Dialogue Systems". In SIGIR.* [Paper link](https://arxiv.org/pdf/2105.03748)
 
 
-Note: In our work, we do not user JDDC (chinese language dataset).
+**Note: In our work (Multi-task User Simulator), we do not use ReDial and JDDC (chinese language dataset).**
 
 
 ## Data
