@@ -1,5 +1,6 @@
 # user-simulation
-User Simulator that generates user-side utterance, predicts user's next action and satisfaction level.
+User Simulator that generates user-side utterance, predicts user's next action and satisfaction level.  
+SOTA in Satisfaction and Action prediction in USS dataset.
 
 <p align="center">
     <img src="imgs/t5-mtl-diagram.png" width="400">
@@ -11,7 +12,7 @@ User Simulator that generates user-side utterance, predicts user's next action a
 
 We propose a multi-task based deep learning user simulator for goal oriented dialogue system that is trained to predict users’ satisfaction and action, while generating the users’ next utterance at the same time with shared weights. 
 We show that 
-1) a deep text-to-text multi-task neural model achieves state-of-the-art performance in user satisfaction and action prediction
+1) a deep text-to-text multi-task neural model achieves state-of-the-art (SOTA) performance in user satisfaction and action prediction
 2) through ablation analysis, adding utterance generation as an auxiliary task can boost the prediction performance via positive transfer between the tasks. 
 
 ## Results
