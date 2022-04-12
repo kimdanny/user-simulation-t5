@@ -1,6 +1,6 @@
 # user-simulation
 User Simulator that generates user-side utterance, predicts user's next action and satisfaction level.  
-SOTA in Satisfaction and Action prediction in USS dataset.
+SOTA in Satisfaction and Action prediction in [USS dataset](https://arxiv.org/pdf/2105.03748).
 
 <p align="center">
     <img src="imgs/t5-mtl-diagram.png" width="400">
