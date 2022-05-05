@@ -32,6 +32,15 @@ We show that
 ![satisfaction](imgs/cross-domain.png)  
 
 
+## Citation
+```
+@article{kim2022multi,
+  title={A Multi-Task Based Neural Model to Simulate Users in Goal-Oriented Dialogue Systems},
+  author={Kim, To Eun and Lipani, Aldo},
+  journal={Association for Computing Machinery, New York, NY, USA},
+  year={2022}
+}
+```
 
 ## Environment
 The author used AWS EC2 Instance to set up the environment:  
