@@ -1,6 +1,8 @@
-# user-simulation
+# user-simulation-t5
 
 Official code repository of the paper [A Multi-Task Based Neural Model to Simulate Users in Goal-Oriented Dialogue Systems](https://www.researchgate.net/publication/360276605_A_Multi-Task_Based_Neural_Model_to_Simulate_Users_in_Goal-Oriented_Dialogue_Systems)
+
+Model files can be shared upon request.
 
 User Simulator that generates user-side utterance, predicts user's next action and satisfaction level.  
 SOTA in Satisfaction and Action prediction in [USS dataset](https://arxiv.org/pdf/2105.03748).
