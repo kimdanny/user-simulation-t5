@@ -1,8 +1,8 @@
 # user-simulation-t5
 
-Official code repository of the paper [A Multi-Task Based Neural Model to Simulate Users in Goal-Oriented Dialogue Systems](https://www.researchgate.net/publication/360276605_A_Multi-Task_Based_Neural_Model_to_Simulate_Users_in_Goal-Oriented_Dialogue_Systems)
+Official code repository of the paper [A Multi-Task Based Neural Model to Simulate Users in Goal-Oriented Dialogue Systems](https://dl.acm.org/doi/abs/10.1145/3477495.3531814)
 
-Model files can be shared upon request.
+**Model checkpoint files can be shared upon request.**
 
 User Simulator that generates user-side utterance, predicts user's next action and satisfaction level.  
 SOTA in Satisfaction and Action prediction in [USS dataset](https://arxiv.org/pdf/2105.03748).
@@ -36,11 +36,13 @@ We show that
 
 ## Citation
 ```
-@article{kim2022multi,
-  title={A Multi-Task Based Neural Model to Simulate Users in Goal-Oriented Dialogue Systems},
-  author={Kim, To Eun and Lipani, Aldo},
-  journal={Association for Computing Machinery, New York, NY, USA},
-  year={2022}
+@inproceedings{10.1145/3477495.3531814, 
+author = {Kim, To Eun and Lipani, Aldo}, 
+title = {A Multi-Task Based Neural Model to Simulate Users in Goal Oriented Dialogue Systems}, 
+year = {2022}, isbn = {9781450387323}, publisher = {Association for Computing Machinery}, address = {New York, NY, USA}, 
+url = {https://doi.org/10.1145/3477495.3531814}, doi = {10.1145/3477495.3531814}, 
+booktitle = {Proceedings of the 45th International ACM SIGIR Conference on Research and Development in Information Retrieval}, 
+pages = {2115–2119}, numpages = {5}, location = {Madrid, Spain}, series = {SIGIR '22} 
 }
 ```
 
